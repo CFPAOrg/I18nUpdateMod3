@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "i18nupdatemod"
-version = "3.0.0"
+version = "3.1.0-SNAPSHOT"
 
 java {
     toolchain {
@@ -21,6 +21,14 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.withType<ShadowJar> {
+    manifest {
+        attributes(
+            mapOf(
+                "TweakClass" to "i18nupdatemod.launchwrapper.LaunchWrapperTweaker",
+                "TweakOrder" to -10
+            )
+        )
+    }
     minimize()
     archiveBaseName.set("I18nUpdateMod")
     relocate("com.google.archivepatcher", "include.com.google.archivepatcher")
