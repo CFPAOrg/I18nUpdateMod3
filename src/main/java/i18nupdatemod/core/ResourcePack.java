@@ -77,6 +77,7 @@ public class ResourcePack {
     public void checkUpdate(String md5Filename) throws IOException {
         if (isUpToDate(md5Filename)) {
             I18nUpdateMod.LOGGER.info("Already up to date.");
+            return;
         }
         //In this time, we can only download full file
         downloadFull();
