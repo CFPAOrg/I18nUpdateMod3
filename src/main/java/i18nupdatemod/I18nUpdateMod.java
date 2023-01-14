@@ -1,12 +1,13 @@
 package i18nupdatemod;
 
+import i18nupdatemod.core.AssetConfig;
 import i18nupdatemod.core.ResourcePack;
-import i18nupdatemod.util.CfpaAssetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 public class I18nUpdateMod {
     public static final String MOD_ID = "i18nupdatemod";
@@ -23,14 +24,13 @@ public class I18nUpdateMod {
 
         ResourcePack.resourcePackPath = minecraftPath.resolve("resourcepacks");
         ResourcePack.temporaryPath = Paths.get(userHome, "." + MOD_ID, minecraftVersion);
-
-        ResourcePack languagePack =
-                new ResourcePack(CfpaAssetUtil.getFileName(minecraftVersion, loader, CfpaAssetUtil.Type.RESOURCE_PACK));
         try {
-            languagePack.checkUpdate(
-                    CfpaAssetUtil.getFileName(minecraftVersion, loader, CfpaAssetUtil.Type.RESOURCE_PACK_MD5));
+            Map<AssetConfig.Type, String> assets = AssetConfig.getAsset(minecraftVersion, loader);
+            ResourcePack languagePack =
+                    new ResourcePack(assets.get(AssetConfig.Type.FILE_NAME));
+            languagePack.checkUpdate(assets.get(AssetConfig.Type.FILE_URL), assets.get(AssetConfig.Type.MD5_URL));
         } catch (Exception e) {
-            LOGGER.warn("Failed to update resource pack {}: {}", languagePack.getFilename(), e);
+            LOGGER.warn("Failed to update resource pack: {}", e.toString());
 //            e.printStackTrace();
         }
     }

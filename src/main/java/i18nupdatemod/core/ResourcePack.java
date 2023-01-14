@@ -1,7 +1,7 @@
 package i18nupdatemod.core;
 
 import i18nupdatemod.I18nUpdateMod;
-import i18nupdatemod.util.CfpaAssetUtil;
+import i18nupdatemod.util.AssetUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
@@ -15,9 +15,9 @@ public class ResourcePack {
     private static final long UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(7);
     public static Path resourcePackPath;
     public static Path temporaryPath;
-    private String filename;
-    private Path filePath;
-    private Path tmpFilePath;
+    private final String filename;
+    private final Path filePath;
+    private final Path tmpFilePath;
 
     public ResourcePack(String filename) {
         this.filename = filename;
@@ -43,7 +43,7 @@ public class ResourcePack {
         }
 
         int cmp = compareTmpFile();
-        Path from = null, to = null;
+        Path from, to;
         if (cmp == 0) {
             I18nUpdateMod.LOGGER.info("Temp and current file has already been synchronized");
             return;
@@ -74,17 +74,17 @@ public class ResourcePack {
         return Files.getLastModifiedTime(tmpFilePath).compareTo(Files.getLastModifiedTime(filePath));
     }
 
-    public void checkUpdate(String md5Filename) throws IOException {
-        if (isUpToDate(md5Filename)) {
+    public void checkUpdate(String fileUrl, String md5Url) throws IOException {
+        if (isUpToDate(md5Url)) {
             I18nUpdateMod.LOGGER.info("Already up to date.");
             return;
         }
         //In this time, we can only download full file
-        downloadFull();
+        downloadFull(fileUrl);
         //In the future, we will download patch file and merge local file
     }
 
-    private boolean isUpToDate(String md5Filename) throws IOException {
+    private boolean isUpToDate(String md5Url) throws IOException {
         //Not exist -> Update
         if (!Files.exists(tmpFilePath)) {
             I18nUpdateMod.LOGGER.info("Local file {} not exist.", tmpFilePath);
@@ -98,18 +98,16 @@ public class ResourcePack {
         }
         //Check Update
         String localMd5 = DigestUtils.md5Hex(Files.newInputStream(tmpFilePath));
-        String remoteMd5 = CfpaAssetUtil.getString(md5Filename);
+        String remoteMd5 = AssetUtil.getString(md5Url);
         I18nUpdateMod.LOGGER.info("{} md5: {}, remote md5: {}", tmpFilePath, localMd5, remoteMd5);
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
-    private void downloadFull() throws IOException {
-        CfpaAssetUtil.download(filename, tmpFilePath);
+    private void downloadFull(String fileUrl) throws IOException {
+        Path downloadTmp = temporaryPath.resolve(filename + ".tmp");
+        AssetUtil.download(fileUrl, downloadTmp);
+        Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
         I18nUpdateMod.LOGGER.info("Updates temp file: {}", tmpFilePath);
         syncTmpFile();
-    }
-
-    public String getFilename() {
-        return filename;
     }
 }
