@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "i18nupdatemod",
+  "version": "${version}",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "i18nupdatemod.fabricloader.FabricLoaderMod"
+    ]
+  },
+  "name": "I18nUpdateMod",
+  "description": "Brand new Minecraft Mod Language Package update mod.",
+  "contact": {
+    "homepage": "https://github.com/xfl03/I18nUpdateMod3",
+    "issues": "https://github.com/xfl03/I18nUpdateMod3/issues",
+    "sources": "https://github.com/xfl03/I18nUpdateMod3"
+  },
+  "authors": [
+    {
+      "name": "xfl03",
+      "contact": {
+        "homepage": "https://github.com/xfl03"
+      }
+    }
+  ],
+  "license": "MIT"
+}

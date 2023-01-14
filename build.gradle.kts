@@ -1,5 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     id("com.github.johnrengelman.shadow") version ("7.1.2")
     id("java")
@@ -15,12 +13,12 @@ java {
     disableAutoTargetJvm()
 }
 
-tasks.withType<JavaCompile> {
+tasks.compileJava {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
 }
 
-tasks.withType<ShadowJar> {
+tasks.shadowJar {
     manifest {
         attributes(
             mapOf(
@@ -66,6 +64,14 @@ dependencies {
     implementation("org.jetbrains:annotations:24.0.0")
 }
 
-tasks.getByName<Test>("test") {
+tasks.test {
     useJUnitPlatform()
+}
+
+tasks.processResources {
+    filesMatching("**") {
+        expand(
+            "version" to project.version,
+        )
+    }
 }
