@@ -1,6 +1,7 @@
 package i18nupdatemod.fabricloader;
 
 import i18nupdatemod.I18nUpdateMod;
+import i18nupdatemod.util.Reflection;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
@@ -14,14 +15,34 @@ public class FabricLoaderMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        FabricLoader loader = FabricLoader.getInstance();
-        if (!(loader instanceof FabricLoaderImpl)) {
-            LOGGER.warn("FabricLoader is not instanceof FabricLoaderImpl, is it Quilt?");
+        Path gameDir = FabricLoader.getInstance().getGameDir();
+        String mcVersion = getMcVersion();
+        if(mcVersion==null){
+            LOGGER.warn("Minecraft version not found");
             return;
         }
-        FabricLoaderImpl impl = (FabricLoaderImpl) loader;
-        Path gameDir = impl.getGameDir();
-        String mcVersion = impl.getGameProvider().getNormalizedGameVersion();
         I18nUpdateMod.init(gameDir, mcVersion, "Fabric");
+    }
+
+    private String getMcVersion(){
+        try {
+            //Fabric
+            return  (String) Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
+                    .get("INSTANCE")
+                    .get("getGameProvider()")
+                    .get("getNormalizedGameVersion()").get();
+        } catch (Exception ignored) {
+
+        }
+        try {
+            //Fabric
+            return  (String) Reflection.clazz("org.quiltmc.loader.impl.QuiltLoaderImpl")
+                    .get("INSTANCE")
+                    .get("getGameProvider()")
+                    .get("getNormalizedGameVersion()").get();
+        } catch (Exception ignored) {
+
+        }
+        return null;
     }
 }
