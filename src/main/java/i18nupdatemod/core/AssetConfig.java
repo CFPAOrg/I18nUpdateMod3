@@ -13,7 +13,7 @@ public class AssetConfig {
     /**
      * <a href="https://github.com/zkitefly/TranslationPackConvert">zkitefly/TranslationPackConvert</a>
      */
-    private static final String CONVERT_ASSET_ROOT = "https://gitcode.net/chearlai/translationpackmirror/-/raw/main/files/";
+    private static final String CONVERT_ASSET_ROOT = "https://gitcode.net/chearlai/translationpackconvert/-/raw/main/files/";
 
     public enum Type {
         FILE_NAME,
