@@ -79,8 +79,8 @@ public class AssetConfig {
 
     private static Map<Type, String> createAsset(String root, String filename, String md5name) {
         if (!root.equalsIgnoreCase(CFPA_ASSET_ROOT)) {
-            I18nUpdateMod.LOGGER.warn("You are using unofficial Minecraft Mod Language Modpack!");
-            I18nUpdateMod.LOGGER.warn("Using it with your own risk!");
+            I18nUpdateMod.LOGGER.warning("You are using unofficial Minecraft Mod Language Modpack!");
+            I18nUpdateMod.LOGGER.warning("Using it with your own risk!");
         }
         Map<Type, String> ret = new HashMap<>();
         ret.put(Type.FILE_NAME, filename);

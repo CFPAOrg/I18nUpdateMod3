@@ -43,6 +43,6 @@ public class GameConfig {
         resourcePacks = resourcePacks.stream().filter(it -> !it.contains(baseName)).collect(Collectors.toList());
         resourcePacks.add(resourcePack);
         configs.put("resourcePacks", GSON.toJson(resourcePacks));
-        I18nUpdateMod.LOGGER.info("Resource Packs: {}", configs.get("resourcePacks"));
+        I18nUpdateMod.LOGGER.info(String.format("Resource Packs: %s", configs.get("resourcePacks")));
     }
 }

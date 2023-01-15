@@ -7,8 +7,6 @@ import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.IncompatibleEnvironmentException;
 import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.Reflection;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -16,9 +14,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
+//1.13-latest
 public class ModLauncherService implements ITransformationService {
-    private static final Logger LOGGER = LogManager.getLogger("I18nUpdateMod");
+    private static final Logger LOGGER = Logger.getLogger("I18nUpdateMod");
 
     @Override
     public @NotNull String name() {
@@ -29,12 +29,12 @@ public class ModLauncherService implements ITransformationService {
     public void initialize(IEnvironment environment) {
         Optional<Path> minecraftPath = environment.getProperty(IEnvironment.Keys.GAMEDIR.get());
         if (!minecraftPath.isPresent()) {
-            LOGGER.warn("Minecraft path not found");
+            LOGGER.warning("Minecraft path not found");
             return;
         }
         String minecraftVersion = getMinecraftVersion();
         if (minecraftVersion == null) {
-            LOGGER.warn("Minecraft version not found");
+            LOGGER.warning("Minecraft version not found");
             return;
         }
         I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge");
@@ -64,7 +64,7 @@ public class ModLauncherService implements ITransformationService {
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn("Error getting minecraft version: {}", e.toString());
+            LOGGER.warning(String.format("Error getting minecraft version: %s", e));
         }
         return null;
     }

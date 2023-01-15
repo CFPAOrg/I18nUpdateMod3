@@ -26,7 +26,8 @@ public class ResourcePack {
         try {
             syncTmpFile();
         } catch (Exception e) {
-            I18nUpdateMod.LOGGER.warn("Error while sync temp file {} <-> {}: {}", filePath, tmpFilePath, e);
+            I18nUpdateMod.LOGGER.warning(
+                    String.format("Error while sync temp file %s <-> %s: %s", filePath, tmpFilePath, e));
         }
     }
 
@@ -57,11 +58,11 @@ public class ResourcePack {
             to = filePath;
         }
 
-//        I18nUpdateMod.LOGGER.info("Synchronizing: {} -> {}", from, to);
+//        I18nUpdateMod.LOGGER.info("Synchronizing: %s -> %s", from, to);
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
         //Ensure same last modified time
         Files.setLastModifiedTime(to, Files.getLastModifiedTime(from));
-        I18nUpdateMod.LOGGER.info("Synchronized: {} -> {}", from, to);
+        I18nUpdateMod.LOGGER.info(String.format("Synchronized: %s -> %s", from, to));
     }
 
     private int compareTmpFile() throws IOException {
@@ -87,19 +88,19 @@ public class ResourcePack {
     private boolean isUpToDate(String md5Url) throws IOException {
         //Not exist -> Update
         if (!Files.exists(tmpFilePath)) {
-            I18nUpdateMod.LOGGER.info("Local file {} not exist.", tmpFilePath);
+            I18nUpdateMod.LOGGER.info(String.format("Local file %s not exist.", tmpFilePath));
             return false;
         }
         //Last update time not exceed gap -> Not Update
         if (Files.getLastModifiedTime(tmpFilePath).to(TimeUnit.MILLISECONDS)
                 > System.currentTimeMillis() - UPDATE_TIME_GAP) {
-            I18nUpdateMod.LOGGER.info("Local file {} has been updated recently.", tmpFilePath);
+            I18nUpdateMod.LOGGER.info(String.format("Local file %s has been updated recently.", tmpFilePath));
             return true;
         }
         //Check Update
         String localMd5 = DigestUtils.md5Hex(Files.newInputStream(tmpFilePath));
         String remoteMd5 = AssetUtil.getString(md5Url);
-        I18nUpdateMod.LOGGER.info("{} md5: {}, remote md5: {}", tmpFilePath, localMd5, remoteMd5);
+        I18nUpdateMod.LOGGER.info(String.format("%s md5: %s, remote md5: %s", tmpFilePath, localMd5, remoteMd5));
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
@@ -107,7 +108,7 @@ public class ResourcePack {
         Path downloadTmp = temporaryPath.resolve(filename + ".tmp");
         AssetUtil.download(fileUrl, downloadTmp);
         Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
-        I18nUpdateMod.LOGGER.info("Updates temp file: {}", tmpFilePath);
+        I18nUpdateMod.LOGGER.info(String.format("Updates temp file: %s", tmpFilePath));
         syncTmpFile();
     }
 }
