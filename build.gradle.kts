@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "i18nupdatemod"
-version = "3.1.0-SNAPSHOT"
+version = "3.2.0"
 
 java {
     toolchain {
@@ -62,6 +62,7 @@ dependencies {
     implementation("commons-codec:commons-codec:1.15")
     implementation("org.ow2.asm:asm:9.4")
     implementation("org.jetbrains:annotations:24.0.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 tasks.test {

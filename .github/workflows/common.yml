@@ -1,0 +1,51 @@
+name: Common
+on:
+  workflow_call:
+    inputs:
+      type:
+        required: true
+        type: string
+      publish-task:
+        required: false
+        type: string
+      is-snapshot:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build-common:
+    name: Build Common
+    runs-on: ubuntu-latest
+    environment: Build
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      -
+        name: Build
+        env:
+          IS_SNAPSHOT: ${{ inputs.is-snapshot }}
+        run: |
+          ./gradlew clean build --stacktrace
+      -
+        name: Publish
+        if: ${{ inputs.publish-task }}
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          export GIT_COMMIT_DESC=$(git log --format=%B -n 1 $GITHUB_SHA)
+          ./gradlew ${{ inputs.publish-task }} --info --stacktrace
+      -
+        uses: actions/upload-artifact@v3
+        with:
+          name: CustomSkinLoader-${{ inputs.type }}-${{ github.run_number }}
+          path: build/libs

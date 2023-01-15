@@ -5,11 +5,11 @@
 本Mod用于自动更新「简体中文资源包」。
 
 ## 下载
-- CurseForge
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/i18nupdatemod)
 - Modrinth
 
 ## 支持的版本
-- Minecraft：1.6-1.19.3都支持（不代表这些版本都有对应的「简体中文资源包」）
+- Minecraft：1.12.2-1.19.3都支持（不代表这些版本都有对应的「简体中文资源包」、未来会添加更多版本支持）
 - Mod加载器：Forge、Fabric、Quilt都支持（有需求的话也可以增加LiteLoader、Rift支持）
 - Java：8-19都支持
 

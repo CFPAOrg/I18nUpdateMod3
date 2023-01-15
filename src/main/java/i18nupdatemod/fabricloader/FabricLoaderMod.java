@@ -4,7 +4,6 @@ import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.Reflection;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.impl.FabricLoaderImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,7 +34,7 @@ public class FabricLoaderMod implements ClientModInitializer {
 
         }
         try {
-            //Fabric
+            //Quilt
             return  (String) Reflection.clazz("org.quiltmc.loader.impl.QuiltLoaderImpl")
                     .get("INSTANCE")
                     .get("getGameProvider()")
