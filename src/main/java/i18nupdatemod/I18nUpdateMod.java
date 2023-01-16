@@ -8,7 +8,6 @@ import i18nupdatemod.util.FileUtil;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class I18nUpdateMod {
@@ -25,26 +24,25 @@ public class I18nUpdateMod {
         LOGGER.info(String.format("User home: %s", userHome));
 
         FileUtil.setResourcePackDirPath(minecraftPath.resolve("resourcepacks"));
-        FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, minecraftVersion));
 
         int minecraftMajorVersion = Integer.parseInt(minecraftVersion.split("\\.")[1]);
 
         try {
             //Get asset
-            Map<AssetConfig.Type, String> assets = AssetConfig.getAsset(minecraftVersion, loader);
+            AssetConfig.AssetInfo assets = AssetConfig.getAsset(minecraftVersion, loader);
 
             //Update resource pack
-            ResourcePack languagePack =
-                    new ResourcePack(assets.get(AssetConfig.Type.FILE_NAME));
-            languagePack.checkUpdate(assets.get(AssetConfig.Type.FILE_URL), assets.get(AssetConfig.Type.MD5_URL));
-            String applyFileName = assets.get(AssetConfig.Type.FILE_NAME);
+            FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, assets.targetVersion));
+            ResourcePack languagePack = new ResourcePack(assets.fileName);
+            languagePack.checkUpdate(assets.fileUrl, assets.md5Url);
+            String applyFileName = assets.fileName;
 
             //Convert resourcepack
-            if (assets.containsKey(AssetConfig.Type.CONVERT_PACK_FORMAT)) {
-                applyFileName = assets.get(AssetConfig.Type.CONVERT_FILE_NAME);
+            if (assets.covertPackFormat != null) {
+                FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, minecraftVersion));
+                applyFileName = assets.covertFileName;
                 ResourcePackConverter converter = new ResourcePackConverter(languagePack, applyFileName);
-                converter.convert(Integer.parseInt(assets.get(AssetConfig.Type.CONVERT_PACK_FORMAT)),
-                        "不受官方支持！这是自动转换的版本！");
+                converter.convert(assets.covertPackFormat, "这是自动转换的版本！不受官方支持！");
             }
 
             //Apply resource pack

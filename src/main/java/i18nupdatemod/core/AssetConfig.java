@@ -9,9 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class AssetConfig {
     /**
@@ -39,15 +37,18 @@ public class AssetConfig {
         }
     }
 
-    public enum Type {
-        FILE_NAME,
-        FILE_URL,
-        MD5_URL,
-        CONVERT_PACK_FORMAT,
-        CONVERT_FILE_NAME
+    public static class AssetInfo {
+        public String fileName;
+        public String fileUrl;
+        public String md5Url;
+        public String targetVersion;
+        @Nullable
+        public Integer covertPackFormat;
+        @Nullable
+        public String covertFileName;
     }
 
-    public static Map<Type, String> getAsset(String minecraftVersion, String loader) {
+    public static AssetInfo getAsset(String minecraftVersion, String loader) {
         AssetIndex targetIndex = getAssetIndex(minecraftVersion);
         if (targetIndex.convertFrom == null) {
             return createAsset(getDownload(targetIndex, loader), null);
@@ -73,18 +74,18 @@ public class AssetConfig {
                 .filter(it -> it.loader.equalsIgnoreCase(loader)).findFirst().orElseGet(() -> index.downloads.get(0));
     }
 
-    private static Map<Type, String> createAsset(
+    private static AssetInfo createAsset(
             AssetIndex.Download download, @Nullable AssetIndex convert) {
-        Map<Type, String> ret = new HashMap<>();
-        ret.put(Type.FILE_NAME, download.filename);
-        ret.put(Type.FILE_URL, CFPA_ASSET_ROOT + download.filename);
-        ret.put(Type.MD5_URL, CFPA_ASSET_ROOT + download.md5Filename);
+        AssetInfo ret = new AssetInfo();
+        ret.fileName = download.filename;
+        ret.fileUrl = CFPA_ASSET_ROOT + download.filename;
+        ret.md5Url = CFPA_ASSET_ROOT + download.md5Filename;
+        ret.targetVersion = download.targetVersion;
         if (convert != null) {
-            ret.put(Type.CONVERT_PACK_FORMAT, Integer.toString(convert.packFormat));
-            ret.put(Type.CONVERT_FILE_NAME,
-                    String.format("Minecraft-Mod-Language-Modpack-Converted-%d.zip", convert.packFormat));
+            ret.covertPackFormat = convert.packFormat;
+            ret.covertFileName =
+                    String.format("Minecraft-Mod-Language-Modpack-Converted-%d.zip", convert.packFormat);
         }
-        ret.forEach((key, value) -> System.out.printf("%s: %s", key, value));
         return ret;
     }
 
