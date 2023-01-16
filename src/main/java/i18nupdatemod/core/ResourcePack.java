@@ -2,6 +2,7 @@ package i18nupdatemod.core;
 
 import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.AssetUtil;
+import i18nupdatemod.util.FileUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
@@ -13,66 +14,20 @@ public class ResourcePack {
      * Limit update check frequency
      */
     private static final long UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(7);
-    public static Path resourcePackPath;
-    public static Path temporaryPath;
     private final String filename;
     private final Path filePath;
     private final Path tmpFilePath;
 
     public ResourcePack(String filename) {
         this.filename = filename;
-        this.filePath = resourcePackPath.resolve(filename);
-        this.tmpFilePath = temporaryPath.resolve(filename);
+        this.filePath = FileUtil.getResourcePackPath(filename);
+        this.tmpFilePath = FileUtil.getTemporaryPath(filename);
         try {
-            syncTmpFile();
+            FileUtil.syncTmpFile(filePath, tmpFilePath);
         } catch (Exception e) {
             I18nUpdateMod.LOGGER.warning(
                     String.format("Error while sync temp file %s <-> %s: %s", filePath, tmpFilePath, e));
         }
-    }
-
-    private void syncTmpFile() throws IOException {
-        //Make tmp dir
-        if (!Files.isDirectory(temporaryPath)) {
-            Files.createDirectories(temporaryPath);
-        }
-
-        //Both temp and current file not found
-        if (!Files.exists(filePath) && !Files.exists(tmpFilePath)) {
-            I18nUpdateMod.LOGGER.info("Both temp and current file not found");
-            return;
-        }
-
-        int cmp = compareTmpFile();
-        Path from, to;
-        if (cmp == 0) {
-            I18nUpdateMod.LOGGER.info("Temp and current file has already been synchronized");
-            return;
-        } else if (cmp < 0) {
-            //Current file is newer
-            from = filePath;
-            to = tmpFilePath;
-        } else {
-            //Temp file is newer
-            from = tmpFilePath;
-            to = filePath;
-        }
-
-//        I18nUpdateMod.LOGGER.info("Synchronizing: %s -> %s", from, to);
-        Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
-        //Ensure same last modified time
-        Files.setLastModifiedTime(to, Files.getLastModifiedTime(from));
-        I18nUpdateMod.LOGGER.info(String.format("Synchronized: %s -> %s", from, to));
-    }
-
-    private int compareTmpFile() throws IOException {
-        if (!Files.exists(filePath)) {
-            return 1;
-        }
-        if (!Files.exists(tmpFilePath)) {
-            return -1;
-        }
-        return Files.getLastModifiedTime(tmpFilePath).compareTo(Files.getLastModifiedTime(filePath));
     }
 
     public void checkUpdate(String fileUrl, String md5Url) throws IOException {
@@ -105,10 +60,14 @@ public class ResourcePack {
     }
 
     private void downloadFull(String fileUrl) throws IOException {
-        Path downloadTmp = temporaryPath.resolve(filename + ".tmp");
+        Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
         AssetUtil.download(fileUrl, downloadTmp);
         Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
         I18nUpdateMod.LOGGER.info(String.format("Updates temp file: %s", tmpFilePath));
-        syncTmpFile();
+        FileUtil.syncTmpFile(filePath, tmpFilePath);
+    }
+
+    public Path getTmpFilePath() {
+        return tmpFilePath;
     }
 }

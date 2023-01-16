@@ -3,6 +3,8 @@ package i18nupdatemod;
 import i18nupdatemod.core.AssetConfig;
 import i18nupdatemod.core.GameConfig;
 import i18nupdatemod.core.ResourcePack;
+import i18nupdatemod.core.ResourcePackConverter;
+import i18nupdatemod.util.FileUtil;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,8 +24,8 @@ public class I18nUpdateMod {
         }
         LOGGER.info(String.format("User home: %s", userHome));
 
-        ResourcePack.resourcePackPath = minecraftPath.resolve("resourcepacks");
-        ResourcePack.temporaryPath = Paths.get(userHome, "." + MOD_ID, minecraftVersion);
+        FileUtil.setResourcePackDirPath(minecraftPath.resolve("resourcepacks"));
+        FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, minecraftVersion));
 
         int minecraftMajorVersion = Integer.parseInt(minecraftVersion.split("\\.")[1]);
 
@@ -35,11 +37,20 @@ public class I18nUpdateMod {
             ResourcePack languagePack =
                     new ResourcePack(assets.get(AssetConfig.Type.FILE_NAME));
             languagePack.checkUpdate(assets.get(AssetConfig.Type.FILE_URL), assets.get(AssetConfig.Type.MD5_URL));
+            String applyFileName = assets.get(AssetConfig.Type.FILE_NAME);
+
+            //Convert resourcepack
+            if (assets.containsKey(AssetConfig.Type.CONVERT_PACK_FORMAT)) {
+                applyFileName = assets.get(AssetConfig.Type.CONVERT_FILE_NAME);
+                ResourcePackConverter converter = new ResourcePackConverter(languagePack, applyFileName);
+                converter.convert(Integer.parseInt(assets.get(AssetConfig.Type.CONVERT_PACK_FORMAT)),
+                        "不受官方支持！这是自动转换的版本！");
+            }
 
             //Apply resource pack
             GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));
             config.addResourcePack("Minecraft-Mod-Language-Modpack",
-                    (minecraftMajorVersion <= 12 ? "" : "file/") + assets.get(AssetConfig.Type.FILE_NAME));
+                    (minecraftMajorVersion <= 12 ? "" : "file/") + applyFileName);
             config.writeToFile();
         } catch (Exception e) {
             LOGGER.warning(String.format("Failed to update resource pack: %s", e));

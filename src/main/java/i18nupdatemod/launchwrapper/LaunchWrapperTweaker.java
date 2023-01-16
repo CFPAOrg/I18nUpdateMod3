@@ -17,6 +17,7 @@ public class LaunchWrapperTweaker implements ITweaker {
     public void acceptOptions(List<String> args, File gameDir, File assetsDir, String profile) {
         String mcVersion = getMcVersion();
         if (mcVersion == null) {
+            LOGGER.warning("Failed to get minecraft version.");
             return;
         }
         I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge");
@@ -60,7 +61,6 @@ public class LaunchWrapperTweaker implements ITweaker {
                     Reflection.clazz("net.minecraftforge.fml.relauncher.FMLInjectionData").get("mccversion").get();
         } catch (Exception ignored) {
         }
-        LOGGER.warning("Failed to get minecraft version.");
         return null;
     }
 }

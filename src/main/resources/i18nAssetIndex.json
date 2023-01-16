@@ -1,0 +1,92 @@
+[
+  {
+    "gameVersions": "[1.6.1,1.8.9]",
+    "packFormat": 1,
+    "convertFrom": "1.10.2"
+  },
+  {
+    "gameVersions": "[1.9,1.10.2]",
+    "packFormat": 2,
+    "downloads": [
+      {
+        "loader": "Forge",
+        "targetVersion": "1.10.2",
+        "filename": "Minecraft-Mod-Language-Modpack-1-10-2.zip",
+        "md5Filename": "1.10.2.md5"
+      }
+    ]
+  },
+  {
+    "gameVersions": "[1.11,1.12.2]",
+    "packFormat": 3,
+    "downloads": [
+      {
+        "loader": "Forge",
+        "targetVersion": "1.12.2",
+        "filename": "Minecraft-Mod-Language-Modpack.zip",
+        "md5Filename": "1.12.2.md5"
+      }
+    ]
+  },
+  {
+    "gameVersions": "[1.13,1.14.4]",
+    "packFormat": 4,
+    "convertFrom": "1.16.5"
+  },
+  {
+    "gameVersions": "[1.15,1.16.1]",
+    "packFormat": 5,
+    "convertFrom": "1.16.5"
+  },
+  {
+    "gameVersions": "[1.16.2,1.16.5]",
+    "packFormat": 6,
+    "downloads": [
+      {
+        "loader": "Forge",
+        "targetVersion": "1.16.5",
+        "filename": "Minecraft-Mod-Language-Modpack-1-16.zip",
+        "md5Filename": "1.16.md5"
+      },
+      {
+        "loader": "Fabric",
+        "targetVersion": "1.16.5",
+        "filename": "Minecraft-Mod-Language-Modpack-1-16-Fabric.zip",
+        "md5Filename": "1.16-fabric.md5"
+      }
+    ]
+  },
+  {
+    "gameVersions": "[1.17,1.17.1]",
+    "packFormat": 7,
+    "convertFrom": "1.18.2"
+  },
+  {
+    "gameVersions": "[1.18,1.18.2]",
+    "packFormat": 8,
+    "downloads": [
+      {
+        "loader": "Forge",
+        "targetVersion": "1.18.2",
+        "filename": "Minecraft-Mod-Language-Modpack-1-18.zip",
+        "md5Filename": "1.18.md5"
+      },
+      {
+        "loader": "Fabric",
+        "targetVersion": "1.18.2",
+        "filename": "Minecraft-Mod-Language-Modpack-1-18-Fabric.zip",
+        "md5Filename": "1.18-fabric.md5"
+      }
+    ]
+  },
+  {
+    "gameVersions": "[1.19,1.19.2]",
+    "packFormat": 9,
+    "convertFrom": "1.18.2"
+  },
+  {
+    "gameVersions": "[1.19.3,)",
+    "packFormat": 12,
+    "convertFrom": "1.18.2"
+  }
+]
