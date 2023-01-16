@@ -29,6 +29,13 @@ public class ResourcePackConverter {
     }
 
     public void convert(int packFormat, String description) {
+        if (Files.exists(sourcePath)) {
+            try {
+                Files.delete(sourcePath);
+            } catch (Exception e) {
+                I18nUpdateMod.LOGGER.warning(String.format("Failed to delete %s", sourcePath));
+            }
+        }
         try (ZipFile zf = new ZipFile(sourcePath.toFile())) {
             ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath));
             for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
@@ -47,7 +54,7 @@ public class ResourcePackConverter {
             }
             zos.close();
             I18nUpdateMod.LOGGER.info(String.format("Converted to %s", tmpFilePath));
-            FileUtil.syncTmpFile(tmpFilePath, filePath);
+            FileUtil.syncTmpFile(tmpFilePath, filePath, true);
         } catch (Exception e) {
             I18nUpdateMod.LOGGER.warning(String.format("Error convert %s to %s", sourcePath, tmpFilePath));
             e.printStackTrace();
@@ -55,7 +62,7 @@ public class ResourcePackConverter {
     }
 
     private byte[] convertPackMeta(InputStream is, int packFormat, String description) {
-        PackMeta meta = GSON.fromJson(new InputStreamReader(is), PackMeta.class);
+        PackMeta meta = GSON.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), PackMeta.class);
         meta.pack.pack_format = packFormat;
         meta.pack.description = description + meta.pack.description;
         return GSON.toJson(meta).getBytes(StandardCharsets.UTF_8);

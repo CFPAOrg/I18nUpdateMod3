@@ -17,13 +17,16 @@ public class ResourcePack {
     private final String filename;
     private final Path filePath;
     private final Path tmpFilePath;
+    private final boolean saveToGame;
 
-    public ResourcePack(String filename) {
+    public ResourcePack(String filename,boolean saveToGame) {
+        //If target version is not current version, not save
+        this.saveToGame = saveToGame;
         this.filename = filename;
         this.filePath = FileUtil.getResourcePackPath(filename);
         this.tmpFilePath = FileUtil.getTemporaryPath(filename);
         try {
-            FileUtil.syncTmpFile(filePath, tmpFilePath);
+            FileUtil.syncTmpFile(filePath, tmpFilePath,saveToGame);
         } catch (Exception e) {
             I18nUpdateMod.LOGGER.warning(
                     String.format("Error while sync temp file %s <-> %s: %s", filePath, tmpFilePath, e));
@@ -64,7 +67,7 @@ public class ResourcePack {
         AssetUtil.download(fileUrl, downloadTmp);
         Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
         I18nUpdateMod.LOGGER.info(String.format("Updates temp file: %s", tmpFilePath));
-        FileUtil.syncTmpFile(filePath, tmpFilePath);
+        FileUtil.syncTmpFile(filePath, tmpFilePath, saveToGame);
     }
 
     public Path getTmpFilePath() {
