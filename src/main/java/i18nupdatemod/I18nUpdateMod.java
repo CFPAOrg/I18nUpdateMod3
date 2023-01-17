@@ -5,23 +5,22 @@ import i18nupdatemod.core.GameConfig;
 import i18nupdatemod.core.ResourcePack;
 import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.util.FileUtil;
+import i18nupdatemod.util.Log;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.logging.Logger;
 
 public class I18nUpdateMod {
     public static final String MOD_ID = "i18nupdatemod";
-    public static final Logger LOGGER = Logger.getLogger(MOD_ID);
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader) {
-        LOGGER.info(String.format("I18nUpdate Mod is loaded in %s with %s", minecraftVersion, loader));
-        LOGGER.info(String.format("Minecraft path: %s", minecraftPath));
+        Log.info(String.format("I18nUpdate Mod is loaded in %s with %s", minecraftVersion, loader));
+        Log.debug(String.format("Minecraft path: %s", minecraftPath));
         String userHome = System.getProperty("user.home");
         if (userHome.equals("null")) {
             userHome = minecraftPath.toString();
         }
-        LOGGER.info(String.format("User home: %s", userHome));
+        Log.debug(String.format("User home: %s", userHome));
 
         FileUtil.setResourcePackDirPath(minecraftPath.resolve("resourcepacks"));
 
@@ -51,7 +50,7 @@ public class I18nUpdateMod {
                     (minecraftMajorVersion <= 12 ? "" : "file/") + applyFileName);
             config.writeToFile();
         } catch (Exception e) {
-            LOGGER.warning(String.format("Failed to update resource pack: %s", e));
+            Log.warning(String.format("Failed to update resource pack: %s", e));
 //            e.printStackTrace();
         }
     }

@@ -2,8 +2,8 @@ package i18nupdatemod.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.FileUtil;
+import i18nupdatemod.util.Log;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -28,16 +29,9 @@ public class ResourcePackConverter {
         this.tmpFilePath = FileUtil.getTemporaryPath(filename);
     }
 
-    public void convert(int packFormat, String description) {
-        if (Files.exists(sourcePath)) {
-            try {
-                Files.delete(sourcePath);
-            } catch (Exception e) {
-                I18nUpdateMod.LOGGER.warning(String.format("Failed to delete %s", sourcePath));
-            }
-        }
+    public void convert(int packFormat, String description) throws Exception {
         try (ZipFile zf = new ZipFile(sourcePath.toFile())) {
-            ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath));
+            ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath, StandardOpenOption.CREATE));
             for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
                 ZipEntry ze = e.nextElement();
                 String name = ze.getName();
@@ -53,11 +47,10 @@ public class ResourcePackConverter {
                 zos.closeEntry();
             }
             zos.close();
-            I18nUpdateMod.LOGGER.info(String.format("Converted to %s", tmpFilePath));
+            Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
             FileUtil.syncTmpFile(tmpFilePath, filePath, true);
         } catch (Exception e) {
-            I18nUpdateMod.LOGGER.warning(String.format("Error convert %s to %s", sourcePath, tmpFilePath));
-            e.printStackTrace();
+            throw new Exception(String.format("Error converting %s to %s: %s", sourcePath, tmpFilePath, e));
         }
     }
 

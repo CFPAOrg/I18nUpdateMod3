@@ -2,7 +2,7 @@ package i18nupdatemod.core;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import i18nupdatemod.I18nUpdateMod;
+import i18nupdatemod.util.Log;
 import org.apache.commons.io.FileUtils;
 
 import java.lang.reflect.Type;
@@ -43,6 +43,6 @@ public class GameConfig {
         resourcePacks = resourcePacks.stream().filter(it -> !it.contains(baseName)).collect(Collectors.toList());
         resourcePacks.add(resourcePack);
         configs.put("resourcePacks", GSON.toJson(resourcePacks));
-        I18nUpdateMod.LOGGER.info(String.format("Resource Packs: %s", configs.get("resourcePacks")));
+        Log.info(String.format("Resource Packs: %s", configs.get("resourcePacks")));
     }
 }

@@ -1,7 +1,5 @@
 package i18nupdatemod.util;
 
-import i18nupdatemod.I18nUpdateMod;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,7 +20,7 @@ public class FileUtil {
                 Files.createDirectories(temporaryDirPath);
             }
         } catch (Exception e) {
-            I18nUpdateMod.LOGGER.warning("Cannot create dir: " + e);
+            Log.warning("Cannot create dir: " + e);
         }
         FileUtil.temporaryDirPath = temporaryDirPath;
     }
@@ -38,14 +36,14 @@ public class FileUtil {
     public static void syncTmpFile(Path filePath, Path tmpFilePath, boolean saveToGame) throws IOException {
         //Both temp and current file not found
         if (!Files.exists(filePath) && !Files.exists(tmpFilePath)) {
-            I18nUpdateMod.LOGGER.info("Both temp and current file not found");
+            Log.debug("Both temp and current file not found");
             return;
         }
 
         int cmp = compareTmpFile(filePath, tmpFilePath);
         Path from, to;
         if (cmp == 0) {
-            I18nUpdateMod.LOGGER.info("Temp and current file has already been synchronized");
+            Log.debug("Temp and current file has already been synchronized");
             return;
         } else if (cmp < 0) {
             //Current file is newer
@@ -62,11 +60,11 @@ public class FileUtil {
             return;
         }
 
-//        I18nUpdateMod.LOGGER.info("Synchronizing: %s -> %s", from, to);
+//        Log.info("Synchronizing: %s -> %s", from, to);
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
         //Ensure same last modified time
         Files.setLastModifiedTime(to, Files.getLastModifiedTime(from));
-        I18nUpdateMod.LOGGER.info(String.format("Synchronized: %s -> %s", from, to));
+        Log.info(String.format("Synchronized: %s -> %s", from, to));
     }
 
     private static int compareTmpFile(Path filePath, Path tmpFilePath) throws IOException {

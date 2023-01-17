@@ -2,7 +2,7 @@ package i18nupdatemod.core;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import i18nupdatemod.I18nUpdateMod;
+import i18nupdatemod.util.Log;
 import i18nupdatemod.util.Version;
 import i18nupdatemod.util.VersionRange;
 import org.jetbrains.annotations.Nullable;
@@ -30,10 +30,10 @@ public class AssetConfig {
             if (is != null) {
                 i18NAssetIndex = GSON.fromJson(new InputStreamReader(is), ASSET_INDEX_LIST_TYPE);
             } else {
-                I18nUpdateMod.LOGGER.warning("Error getting index: is is null");
+                Log.warning("Error getting index: is is null");
             }
         } catch (Exception e) {
-            I18nUpdateMod.LOGGER.warning("Error getting index: " + e);
+            Log.warning("Error getting index: " + e);
         }
     }
 

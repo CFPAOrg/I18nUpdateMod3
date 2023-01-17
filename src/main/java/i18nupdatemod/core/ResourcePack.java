@@ -1,8 +1,8 @@
 package i18nupdatemod.core;
 
-import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.AssetUtil;
 import i18nupdatemod.util.FileUtil;
+import i18nupdatemod.util.Log;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
@@ -28,14 +28,14 @@ public class ResourcePack {
         try {
             FileUtil.syncTmpFile(filePath, tmpFilePath,saveToGame);
         } catch (Exception e) {
-            I18nUpdateMod.LOGGER.warning(
+            Log.warning(
                     String.format("Error while sync temp file %s <-> %s: %s", filePath, tmpFilePath, e));
         }
     }
 
     public void checkUpdate(String fileUrl, String md5Url) throws IOException {
         if (isUpToDate(md5Url)) {
-            I18nUpdateMod.LOGGER.info("Already up to date.");
+            Log.debug("Already up to date.");
             return;
         }
         //In this time, we can only download full file
@@ -46,19 +46,19 @@ public class ResourcePack {
     private boolean isUpToDate(String md5Url) throws IOException {
         //Not exist -> Update
         if (!Files.exists(tmpFilePath)) {
-            I18nUpdateMod.LOGGER.info(String.format("Local file %s not exist.", tmpFilePath));
+            Log.debug("Local file %s not exist.", tmpFilePath);
             return false;
         }
         //Last update time not exceed gap -> Not Update
         if (Files.getLastModifiedTime(tmpFilePath).to(TimeUnit.MILLISECONDS)
                 > System.currentTimeMillis() - UPDATE_TIME_GAP) {
-            I18nUpdateMod.LOGGER.info(String.format("Local file %s has been updated recently.", tmpFilePath));
+            Log.debug("Local file %s has been updated recently.", tmpFilePath);
             return true;
         }
         //Check Update
         String localMd5 = DigestUtils.md5Hex(Files.newInputStream(tmpFilePath));
         String remoteMd5 = AssetUtil.getString(md5Url);
-        I18nUpdateMod.LOGGER.info(String.format("%s md5: %s, remote md5: %s", tmpFilePath, localMd5, remoteMd5));
+        Log.debug("%s md5: %s, remote md5: %s", tmpFilePath, localMd5, remoteMd5);
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
@@ -66,7 +66,7 @@ public class ResourcePack {
         Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
         AssetUtil.download(fileUrl, downloadTmp);
         Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
-        I18nUpdateMod.LOGGER.info(String.format("Updates temp file: %s", tmpFilePath));
+        Log.debug(String.format("Updates temp file: %s", tmpFilePath));
         FileUtil.syncTmpFile(filePath, tmpFilePath, saveToGame);
     }
 

@@ -1,23 +1,23 @@
 package i18nupdatemod.fabricloader;
 
 import i18nupdatemod.I18nUpdateMod;
+import i18nupdatemod.util.Log;
 import i18nupdatemod.util.Reflection;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
-import java.util.logging.Logger;
 
 //1.14-latest
 public class FabricLoaderMod implements ClientModInitializer {
-    private static final Logger LOGGER = Logger.getLogger("I18nUpdateMod");
 
     @Override
     public void onInitializeClient() {
         Path gameDir = FabricLoader.getInstance().getGameDir();
+        Log.setMinecraftLogFile(gameDir);
         String mcVersion = getMcVersion();
         if (mcVersion == null) {
-            LOGGER.warning("Minecraft version not found");
+            Log.warning("Minecraft version not found");
             return;
         }
         I18nUpdateMod.init(gameDir, mcVersion, "Fabric");

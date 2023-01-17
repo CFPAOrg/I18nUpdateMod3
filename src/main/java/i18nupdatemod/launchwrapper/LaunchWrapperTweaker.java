@@ -1,23 +1,23 @@
 package i18nupdatemod.launchwrapper;
 
 import i18nupdatemod.I18nUpdateMod;
+import i18nupdatemod.util.Log;
 import i18nupdatemod.util.Reflection;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
 
 //1.6-1.12.2
 public class LaunchWrapperTweaker implements ITweaker {
-    private static final Logger LOGGER = Logger.getLogger("I18nUpdateMod");
 
     @Override
     public void acceptOptions(List<String> args, File gameDir, File assetsDir, String profile) {
+        Log.setMinecraftLogFile(gameDir.toPath());
         String mcVersion = getMcVersion();
         if (mcVersion == null) {
-            LOGGER.warning("Failed to get minecraft version.");
+            Log.warning("Failed to get minecraft version.");
             return;
         }
         I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge");
