@@ -32,7 +32,7 @@ public class I18nUpdateMod {
 
             //Update resource pack
             FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, assets.targetVersion));
-            ResourcePack languagePack = new ResourcePack(assets.fileName, assets.targetVersion.equals(minecraftVersion));
+            ResourcePack languagePack = new ResourcePack(assets.fileName, assets.covertPackFormat == null);
             languagePack.checkUpdate(assets.fileUrl, assets.md5Url);
             String applyFileName = assets.fileName;
 

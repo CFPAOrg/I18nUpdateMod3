@@ -28,11 +28,12 @@ public class GameConfig {
         }
         this.configs = FileUtils.readLines(configFile.toFile(), StandardCharsets.UTF_8).stream()
                 .map(it -> it.split(":", 2))
+                .filter(it -> it.length == 2)
                 .collect(Collectors.toMap(it -> it[0], it -> it[1], (a, b) -> a, LinkedHashMap::new));
     }
 
     public void writeToFile() throws Exception {
-        FileUtils.writeLines(configFile.toFile(), configs.entrySet().stream()
+        FileUtils.writeLines(configFile.toFile(), "UTF-8", configs.entrySet().stream()
                 .map(it -> it.getKey() + ":" + it.getValue()).collect(Collectors.toList()));
     }
 
@@ -44,5 +45,6 @@ public class GameConfig {
         resourcePacks.add(resourcePack);
         configs.put("resourcePacks", GSON.toJson(resourcePacks));
         Log.info(String.format("Resource Packs: %s", configs.get("resourcePacks")));
+//        configs.put("lang", "zh_cn");
     }
 }
