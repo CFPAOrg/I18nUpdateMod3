@@ -82,24 +82,11 @@
   {
     "gameVersions": "[1.19,1.19.2]",
     "packFormat": 9,
-    "convertFrom": "1.19.3"
+    "convertFrom": "1.18.2"
   },
   {
     "gameVersions": "[1.19.3,)",
     "packFormat": 12,
-    "downloads": [
-      {
-        "loader": "Forge",
-        "targetVersion": "1.19.3",
-        "filename": "Minecraft-Mod-Language-Modpack-1-19.zip",
-        "md5Filename": "1.19.md5"
-      },
-      {
-        "loader": "WaitingForFabric",
-        "targetVersion": "1.19.3",
-        "filename": "Minecraft-Mod-Language-Modpack-1-19-Fabric.zip",
-        "md5Filename": "1.19-fabric.md5"
-      }
-    ]
+    "convertFrom": "1.18.2"
   }
 ]
