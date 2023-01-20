@@ -6,10 +6,10 @@
 
 ## 下载
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/i18nupdatemod)
-- Modrinth
+- [Modrinth](https://modrinth.com/mod/i18nupdatemod)
 
 ## 支持的版本
-- Minecraft：1.6.1-1.19.3都支持
+- Minecraft：1.6.1-1.19.4快照版都支持
 - Mod加载器：Forge、Fabric、Quilt都支持（有需求的话也可以增加LiteLoader、Rift支持）
 - Java：8-19都支持
 
@@ -17,5 +17,5 @@
 
 ## 支持的「简体中文资源包」
 为了尽可能实用，目前本Mod会根据游戏版本自动下载或转换「简体中文资源包」。
-- [CFPAOrg/Minecraft-Mod-Language-Package](https://github.com/CFPAOrg/Minecraft-Mod-Language-Package)：支持1.12、1.16、1.18
+- 官方支持：支持1.12、1.16、1.18、1.19.3
 - 自动转换：支持其它所有版本
