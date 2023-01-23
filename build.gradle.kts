@@ -23,7 +23,8 @@ tasks.shadowJar {
         attributes(
             mapOf(
                 "TweakClass" to "i18nupdatemod.launchwrapper.LaunchWrapperTweaker",
-                "TweakOrder" to 33
+                "TweakOrder" to 33,
+                "Automatic-Module-Name" to "i18nupdatemod",
             )
         )
     }
