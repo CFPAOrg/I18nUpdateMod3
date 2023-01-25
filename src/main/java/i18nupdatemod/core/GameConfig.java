@@ -40,6 +40,10 @@ public class GameConfig {
     public void addResourcePack(String baseName, String resourcePack) {
         List<String> resourcePacks = GSON.fromJson(
                 configs.computeIfAbsent("resourcePacks", it -> "[]"), STRING_LIST_TYPE);
+        //If resource packs already contains target resource pack, nothing to do
+        if (resourcePacks.contains(resourcePack)) {
+            return;
+        }
         //Remove other Minecraft Mod Language Pack
         resourcePacks = resourcePacks.stream().filter(it -> !it.contains(baseName)).collect(Collectors.toList());
         resourcePacks.add(resourcePack);
