@@ -31,7 +31,8 @@ public class ResourcePackConverter {
 
     public void convert(int packFormat, String description) throws Exception {
         try (ZipFile zf = new ZipFile(sourcePath.toFile())) {
-            ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath, StandardOpenOption.CREATE));
+            ZipOutputStream zos = new ZipOutputStream(
+                    Files.newOutputStream(tmpFilePath, StandardOpenOption.CREATE), StandardCharsets.UTF_8);
             for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
                 ZipEntry ze = e.nextElement();
                 String name = ze.getName();
@@ -47,6 +48,7 @@ public class ResourcePackConverter {
                 zos.closeEntry();
             }
             zos.close();
+            zf.close();
             Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
             FileUtil.syncTmpFile(tmpFilePath, filePath, true);
         } catch (Exception e) {
