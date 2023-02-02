@@ -79,11 +79,10 @@ tasks.processResources {
 }
 
 val supportMinecraftVersions = listOf(
-    "Forge", "Fabric", "Quilt",
-    "1.6.1", "1.6.2", "1.6.4", "1.7.2", "1.7.10", "1.8", "1.8.8", "1.8.9", "1.9", "1.9.4", "1.10", "1.10.2",
-    "1.11", "1.11.2", "1.12", "1.12.1", "1.12.2", "1.13.2", "1.14", "1.14.1", "1.14.2", "1.14.3", "1.14.4",
-    "1.15", "1.15.1", "1.15.2", "1.16", "1.16.1", "1.16.2", "1.16.3", "1.16.4", "1.16.5", "1.17", "1.17.1",
-    "1.18", "1.18.1", "1.18.2", "1.19", "1.19.1", "1.19.2", "1.19.3"
+    "1.6.1", "1.6.2", "1.6.4", "1.7.2", "1.7.10", "1.8", "1.8.8", "1.8.9", "1.9", "1.9.4", "1.10", "1.10.2", "1.11",
+    "1.11.2", "1.12", "1.12.1", "1.12.2", "1.13.2", "1.14", "1.14.1", "1.14.2", "1.14.3", "1.14.4", "1.15", "1.15.1",
+    "1.15.2", "1.16", "1.16.1", "1.16.2", "1.16.3", "1.16.4", "1.16.5", "1.17", "1.17.1", "1.18", "1.18.1", "1.18.2",
+    "1.19", "1.19.1", "1.19.2", "1.19.3"
 )
 
 modrinth {
@@ -93,10 +92,16 @@ modrinth {
     versionName.set("I18nUpdateMod ${project.version}")
     versionType.set("release")
     uploadFile.set(tasks["shadowJar"])
-    gameVersions.set(supportMinecraftVersions.subList(3, supportMinecraftVersions.size))
+    gameVersions.set(supportMinecraftVersions)
     loaders.set(listOf("fabric", "forge", "quilt"))
     syncBodyFrom.set(rootProject.file("README.md").readText())
 }
+
+val curseForgeSpecialVersions = listOf(
+    "Forge", "Fabric", "Quilt", "Client", "Java 8", "Java 9", "Java 10", "Java 11", "Java 12", "Java 13", "Java 14",
+    "Java 15", "Java 16", "Java 17", "Java 18", "1.14-Snapshot", "1.15-Snapshot", "1.16-Snapshot", "1.17-Snapshot",
+    "1.18-Snapshot", "1.19-Snapshot"
+)
 
 curseforge {
     apiKey = if (System.getenv("CURSE_TOKEN") != null) System.getenv("CURSE_TOKEN") else "dummy"
@@ -106,6 +111,7 @@ curseforge {
         mainArtifact(tasks["shadowJar"]) {
             this.displayName = "I18nUpdateMod ${project.version}"
         }
-        gameVersionStrings = supportMinecraftVersions
+        gameVersionStrings.addAll(supportMinecraftVersions)
+        gameVersionStrings.addAll(curseForgeSpecialVersions)
     }
 }
