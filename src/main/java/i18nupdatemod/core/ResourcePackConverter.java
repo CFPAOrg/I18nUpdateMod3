@@ -11,44 +11,62 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class ResourcePackConverter {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private final Path sourcePath;
+    private final List<Path> sourcePath;
     private final Path filePath;
     private final Path tmpFilePath;
 
-    public ResourcePackConverter(ResourcePack resourcePack, String filename) {
-        this.sourcePath = resourcePack.getTmpFilePath();
+    public ResourcePackConverter(List<ResourcePack> resourcePack, String filename) {
+        this.sourcePath = resourcePack.stream().map(ResourcePack::getTmpFilePath).collect(Collectors.toList());
         this.filePath = FileUtil.getResourcePackPath(filename);
         this.tmpFilePath = FileUtil.getTemporaryPath(filename);
     }
 
     public void convert(int packFormat, String description) throws Exception {
-        try (ZipFile zf = new ZipFile(sourcePath.toFile())) {
-            ZipOutputStream zos = new ZipOutputStream(
-                    Files.newOutputStream(tmpFilePath, StandardOpenOption.CREATE), StandardCharsets.UTF_8);
-            for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
-                ZipEntry ze = e.nextElement();
-                String name = ze.getName();
-                zos.putNextEntry(new ZipEntry(name));
-                InputStream is = zf.getInputStream(ze);
-                if (name.equalsIgnoreCase("pack.mcmeta")) {
-                    //Convert pack.mcmeta
-                    zos.write(convertPackMeta(is, packFormat, description));
-                } else {
-                    //Copy other file
-                    IOUtils.copy(is, zos);
+        Set<String> fileList = new HashSet<>();
+        try (ZipOutputStream zos = new ZipOutputStream(
+                Files.newOutputStream(tmpFilePath),
+                StandardCharsets.UTF_8)) {
+//            zos.setMethod(ZipOutputStream.STORED);
+            for (Path p : sourcePath) {
+                Log.info("Converting: " + p);
+                try (ZipFile zf = new ZipFile(p.toFile(), StandardCharsets.UTF_8)) {
+                    for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
+                        ZipEntry ze = e.nextElement();
+                        String name = ze.getName();
+                        // Don't put same file
+                        if (fileList.contains(name)) {
+//                            Log.debug(name + ": DUPLICATE");
+                            continue;
+                        }
+                        fileList.add(name);
+//                        Log.debug(name);
+
+                        // Put file into new zip
+                        zos.putNextEntry(new ZipEntry(name));
+                        InputStream is = zf.getInputStream(ze);
+                        if (name.equalsIgnoreCase("pack.mcmeta")) {
+                            //Convert pack.mcmeta
+                            zos.write(convertPackMeta(is, packFormat, description));
+                        } else {
+                            //Copy other file
+                            IOUtils.copy(is, zos);
+                        }
+                        zos.closeEntry();
+                    }
                 }
-                zos.closeEntry();
             }
             zos.close();
-            zf.close();
             Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
             FileUtil.syncTmpFile(tmpFilePath, filePath, true);
         } catch (Exception e) {

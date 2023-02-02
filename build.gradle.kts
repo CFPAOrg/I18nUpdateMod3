@@ -21,11 +21,15 @@ tasks.compileJava {
 tasks.shadowJar {
     manifest {
         attributes(
-            mapOf(
-                "TweakClass" to "i18nupdatemod.launchwrapper.LaunchWrapperTweaker",
-                "TweakOrder" to 33,
-                "Automatic-Module-Name" to "i18nupdatemod",
-            )
+            "TweakClass" to "i18nupdatemod.launchwrapper.LaunchWrapperTweaker",
+            "TweakOrder" to 33,
+            "Automatic-Module-Name" to "i18nupdatemod",
+            "Specification-Title" to "i18nupdatemod",
+            "Specification-Version" to "1",
+            "Specification-Vendor" to "xfl03",
+            "Implementation-Title" to "i18nupdatemod",
+            "Implementation-Version" to project.version,
+            "Implementation-Vendor" to "xfl03"
         )
     }
     minimize()

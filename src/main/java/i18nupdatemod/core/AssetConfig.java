@@ -9,7 +9,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AssetConfig {
     /**
@@ -38,24 +40,30 @@ public class AssetConfig {
     }
 
     public static class AssetInfo {
-        public String fileName;
-        public String fileUrl;
-        public String md5Url;
-        public String targetVersion;
+        public List<AssetDownloadInfo> downloads;
         @Nullable
         public Integer covertPackFormat;
         @Nullable
         public String covertFileName;
+
+        public static class AssetDownloadInfo {
+            public String fileName;
+            public String fileUrl;
+            public String md5Url;
+            public String targetVersion;
+        }
     }
 
     public static AssetInfo getAsset(String minecraftVersion, String loader) {
         AssetIndex targetIndex = getAssetIndex(minecraftVersion);
         if (targetIndex.convertFrom == null) {
-            return createAsset(getDownload(targetIndex, loader), null);
+            return createAsset(Collections.singletonList(getDownload(targetIndex, loader)), null);
         }
 
-        AssetIndex fromIndex = getAssetIndex(targetIndex.convertFrom);
-        return createAsset(getDownload(fromIndex, loader), targetIndex);
+        return createAsset(targetIndex.convertFrom.stream()
+                .map(AssetConfig::getAssetIndex)
+                .map(it -> getDownload(it, loader))
+                .collect(Collectors.toList()), targetIndex);
     }
 
     private static AssetIndex getAssetIndex(String minecraftVersion) {
@@ -74,13 +82,18 @@ public class AssetConfig {
                 .filter(it -> it.loader.equalsIgnoreCase(loader)).findFirst().orElseGet(() -> index.downloads.get(0));
     }
 
-    private static AssetInfo createAsset(
-            AssetIndex.Download download, @Nullable AssetIndex convert) {
+    private static AssetInfo createAsset(List<AssetIndex.Download> download, @Nullable AssetIndex convert) {
         AssetInfo ret = new AssetInfo();
-        ret.fileName = download.filename;
-        ret.fileUrl = CFPA_ASSET_ROOT + download.filename;
-        ret.md5Url = CFPA_ASSET_ROOT + download.md5Filename;
-        ret.targetVersion = download.targetVersion;
+
+        ret.downloads = download.stream().map(it -> {
+            AssetInfo.AssetDownloadInfo adi = new AssetInfo.AssetDownloadInfo();
+            adi.fileName = it.filename;
+            adi.fileUrl = CFPA_ASSET_ROOT + it.filename;
+            adi.md5Url = CFPA_ASSET_ROOT + it.md5Filename;
+            adi.targetVersion = it.targetVersion;
+            return adi;
+        }).collect(Collectors.toList());
+
         if (convert != null) {
             ret.covertPackFormat = convert.packFormat;
             ret.covertFileName =
@@ -92,7 +105,7 @@ public class AssetConfig {
     private static class AssetIndex {
         String gameVersions;
         int packFormat;
-        @Nullable String convertFrom;
+        @Nullable List<String> convertFrom;
         @Nullable List<Download> downloads;
 
         private static class Download {

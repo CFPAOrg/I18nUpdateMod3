@@ -81,4 +81,8 @@ public class ResourcePack {
     public Path getTmpFilePath() {
         return tmpFilePath;
     }
+
+    public String getFilename() {
+        return filename;
+    }
 }
