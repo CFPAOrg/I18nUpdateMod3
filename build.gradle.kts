@@ -2,11 +2,11 @@ plugins {
     id("com.github.johnrengelman.shadow") version ("7.1.2")
     id("java")
     id("com.modrinth.minotaur") version "2.6.0"
-    id("net.galacticraft.publish.curseforge") version "1.0.1"
+    id("io.github.CDAGaming.cursegradle") version "1.6.0"
 }
 
 group = "i18nupdatemod"
-version = "3.4.0"
+version = "3.4.0" + if ("false" == System.getenv("IS_SNAPSHOT")) "" else "-SNAPSHOT"
 
 java {
     toolchain {
@@ -99,8 +99,13 @@ modrinth {
 }
 
 curseforge {
-    mainFile.set(tasks["shadowJar"])
-    projectId.set("297404")
-    releaseType.set("release")
-    gameVersions.set(supportMinecraftVersions)
+    apiKey = if (System.getenv("CURSE_TOKEN") != null) System.getenv("CURSE_TOKEN") else "dummy"
+    project {
+        id = "297404"
+        releaseType = "release"
+        mainArtifact(tasks["shadowJar"]) {
+            this.displayName = "I18nUpdateMod ${project.version}"
+        }
+        gameVersionStrings = supportMinecraftVersions
+    }
 }

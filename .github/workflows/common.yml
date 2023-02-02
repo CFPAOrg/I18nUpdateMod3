@@ -5,9 +5,6 @@ on:
       type:
         required: true
         type: string
-      publish-task:
-        required: false
-        type: string
       is-snapshot:
         required: false
         type: boolean
@@ -34,18 +31,17 @@ jobs:
         env:
           IS_SNAPSHOT: ${{ inputs.is-snapshot }}
         run: |
-          ./gradlew clean build --stacktrace
+          ./gradlew clean shadowJar --info --stacktrace
       -
         name: Publish
-        if: ${{ inputs.publish-task }}
+        if: ${{ !inputs.is-snapshot }}
         env:
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          CURSE_TOKEN: ${{ secrets.CURSE_TOKEN }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
-          export GIT_COMMIT_DESC=$(git log --format=%B -n 1 $GITHUB_SHA)
-          ./gradlew ${{ inputs.publish-task }} --info --stacktrace
+          ./gradlew curseforge modrinth --info --stacktrace
       -
         uses: actions/upload-artifact@v3
         with:
-          name: CustomSkinLoader-${{ inputs.type }}-${{ github.run_number }}
+          name: I18nUpdateMod-${{ inputs.type }}-${{ github.run_number }}
           path: build/libs

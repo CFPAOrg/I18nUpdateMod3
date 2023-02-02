@@ -1,0 +1,14 @@
+name: Release
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-release:
+    name: Build Release
+    uses: ./.github/workflows/common.yml
+    with:
+      type: Release
+      is-snapshot: false
+    secrets: inherit

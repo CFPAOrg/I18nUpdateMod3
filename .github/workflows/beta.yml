@@ -1,0 +1,13 @@
+name: Beta
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build-beta:
+    name: Build Beta
+    uses: ./.github/workflows/common.yml
+    with:
+      type: Beta
+    secrets: inherit
