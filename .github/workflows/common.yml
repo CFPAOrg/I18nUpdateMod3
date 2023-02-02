@@ -36,6 +36,7 @@ jobs:
         name: Publish
         if: ${{ !inputs.is-snapshot }}
         env:
+          IS_SNAPSHOT: ${{ inputs.is-snapshot }}
           CURSE_TOKEN: ${{ secrets.CURSE_TOKEN }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
