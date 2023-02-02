@@ -112,7 +112,7 @@
     "downloads": [
       {
         "loader": "Forge",
-        "targetVersion": "11.45.14",
+        "targetVersion": "1.19.3",
         "filename": "Minecraft-Mod-Language-Modpack-1-19.zip",
         "md5Filename": "1.19.md5"
       }

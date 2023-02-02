@@ -10,7 +10,7 @@
 
 ## 支持的版本
 - Minecraft：1.6.1~1.19.4快照版 都支持
-- Mod加载器：Forge、Fabric、Quilt 都支持（有需求的话也可以增加LiteLoader、Rift支持）
+- Mod加载器：Forge、Fabric、Quilt 都支持
 - Java：8~19 都支持
 
 仅仅需要在mods文件夹中放置本Mod的jar文件即可，Mod本身与各主流Minecraft版本、Mod Loader、Java版本均兼容，Mod本身不需要进行任何版本隔离。

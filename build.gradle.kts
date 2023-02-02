@@ -1,6 +1,8 @@
 plugins {
     id("com.github.johnrengelman.shadow") version ("7.1.2")
     id("java")
+    id("com.modrinth.minotaur") version "2.6.0"
+    id("net.galacticraft.publish.curseforge") version "1.0.1"
 }
 
 group = "i18nupdatemod"
@@ -24,12 +26,6 @@ tasks.shadowJar {
             "TweakClass" to "i18nupdatemod.launchwrapper.LaunchWrapperTweaker",
             "TweakOrder" to 33,
             "Automatic-Module-Name" to "i18nupdatemod",
-            "Specification-Title" to "i18nupdatemod",
-            "Specification-Version" to "1",
-            "Specification-Vendor" to "xfl03",
-            "Implementation-Title" to "i18nupdatemod",
-            "Implementation-Version" to project.version,
-            "Implementation-Vendor" to "xfl03"
         )
     }
     minimize()
@@ -80,4 +76,31 @@ tasks.processResources {
             "version" to project.version,
         )
     }
+}
+
+val supportMinecraftVersions = listOf(
+    "Forge", "Fabric", "Quilt",
+    "1.6.1", "1.6.2", "1.6.4", "1.7.2", "1.7.10", "1.8", "1.8.8", "1.8.9", "1.9", "1.9.4", "1.10", "1.10.2",
+    "1.11", "1.11.2", "1.12", "1.12.1", "1.12.2", "1.13.2", "1.14", "1.14.1", "1.14.2", "1.14.3", "1.14.4",
+    "1.15", "1.15.1", "1.15.2", "1.16", "1.16.1", "1.16.2", "1.16.3", "1.16.4", "1.16.5", "1.17", "1.17.1",
+    "1.18", "1.18.1", "1.18.2", "1.19", "1.19.1", "1.19.2", "1.19.3"
+)
+
+modrinth {
+    token.set(System.getenv("MODRINTH_TOKEN"))
+    projectId.set("PWERr14M")
+    versionNumber.set("${project.version}")
+    versionName.set("I18nUpdateMod ${project.version}")
+    versionType.set("release")
+    uploadFile.set(tasks["shadowJar"])
+    gameVersions.set(supportMinecraftVersions.subList(3, supportMinecraftVersions.size))
+    loaders.set(listOf("fabric", "forge", "quilt"))
+    syncBodyFrom.set(rootProject.file("README.md").readText())
+}
+
+curseforge {
+    mainFile.set(tasks["shadowJar"])
+    projectId.set("297404")
+    releaseType.set("release")
+    gameVersions.set(supportMinecraftVersions)
 }

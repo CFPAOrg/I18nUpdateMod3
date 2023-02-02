@@ -59,7 +59,8 @@ public class I18nUpdateMod {
                 FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, minecraftVersion));
                 applyFileName = assets.covertFileName;
                 ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
-                converter.convert(assets.covertPackFormat, "这是自动转换的版本！不受官方支持！");
+                converter.convert(assets.covertPackFormat,
+                        languagePacks.size() > 1 ? "该包由两版本合并，若有错误请反馈！" : "这是自动转换的版本！不受官方支持！");
             }
 
             //Apply resource pack
