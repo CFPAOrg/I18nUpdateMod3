@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "i18nupdatemod"
-version = "3.4.1" + if ("false" == System.getenv("IS_SNAPSHOT")) "" else "-SNAPSHOT"
+version = project.properties["version"].toString() + if ("false" == System.getenv("IS_SNAPSHOT")) "" else "-SNAPSHOT"
 
 java {
     toolchain {
