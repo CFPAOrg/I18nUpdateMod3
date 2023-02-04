@@ -95,6 +95,7 @@ modrinth {
     gameVersions.set(supportMinecraftVersions)
     loaders.set(listOf("fabric", "forge", "quilt"))
     syncBodyFrom.set(rootProject.file("README.md").readText())
+    changelog.set(System.getenv("CHANGE_LOG"))
 }
 
 val curseForgeSpecialVersions = listOf(
@@ -113,5 +114,6 @@ curseforge {
         }
         gameVersionStrings.addAll(supportMinecraftVersions)
         gameVersionStrings.addAll(curseForgeSpecialVersions)
+        changelog = System.getenv("CHANGE_LOG")
     }
 }

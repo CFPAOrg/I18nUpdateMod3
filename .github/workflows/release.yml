@@ -1,8 +1,7 @@
 name: Release
 on:
-  push:
-    tags:
-      - '*'
+  release:
+    types: [published]
 
 jobs:
   build-release:
@@ -11,4 +10,5 @@ jobs:
     with:
       type: Release
       is-snapshot: false
+      change-log: ${{ github.event.release.body }}
     secrets: inherit
