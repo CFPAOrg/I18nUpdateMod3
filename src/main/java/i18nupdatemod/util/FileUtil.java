@@ -10,19 +10,23 @@ public class FileUtil {
     private static Path temporaryDirPath;
 
     public static void setResourcePackDirPath(Path path) {
+        saveMakeDir(path);
         resourcePackDirPath = path;
     }
 
     public static void setTemporaryDirPath(Path temporaryDirPath) {
+        saveMakeDir(temporaryDirPath);
+        FileUtil.temporaryDirPath = temporaryDirPath;
+    }
+
+    private static void saveMakeDir(Path path) {
         try {
-            //Make tmp dir
-            if (!Files.isDirectory(temporaryDirPath)) {
-                Files.createDirectories(temporaryDirPath);
+            if (!Files.isDirectory(path)) {
+                Files.createDirectories(path);
             }
         } catch (Exception e) {
             Log.warning("Cannot create dir: " + e);
         }
-        FileUtil.temporaryDirPath = temporaryDirPath;
     }
 
     public static Path getResourcePackPath(String filename) {
