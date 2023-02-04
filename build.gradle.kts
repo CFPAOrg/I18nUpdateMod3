@@ -114,6 +114,6 @@ curseforge {
         }
         gameVersionStrings.addAll(supportMinecraftVersions)
         gameVersionStrings.addAll(curseForgeSpecialVersions)
-        changelog = System.getenv("CHANGE_LOG")
+        changelog = if (System.getenv("CHANGE_LOG") != null) System.getenv("CHANGE_LOG") else "dummy"
     }
 }
