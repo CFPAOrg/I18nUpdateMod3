@@ -2,7 +2,7 @@
 更现代的自动汉化更新模组。
 
 「[简体中文资源包（Minecraft Mod Language Package）](https://github.com/CFPAOrg/Minecraft-Mod-Language-Package)」是由「[CFPAOrg](http://cfpa.team/)」团队维护的「自动汉化资源包」，可以将一些Mod中的文本翻译为中文。  
-本Mod用于自动更新「简体中文资源包」。
+本Mod用于自动下载、更新、应用「简体中文资源包」。
 
 ## 下载
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/i18nupdatemod)
