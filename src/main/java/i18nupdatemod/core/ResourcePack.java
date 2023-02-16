@@ -7,7 +7,9 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.TimeUnit;
 
 public class ResourcePack {
@@ -19,6 +21,7 @@ public class ResourcePack {
     private final Path filePath;
     private final Path tmpFilePath;
     private final boolean saveToGame;
+    private String remoteMd5;
 
     public ResourcePack(String filename, boolean saveToGame) {
         //If target version is not current version, not save
@@ -40,7 +43,7 @@ public class ResourcePack {
             return;
         }
         //In this time, we can only download full file
-        downloadFull(fileUrl);
+        downloadFull(fileUrl, md5Url);
         //In the future, we will download patch file and merge local file
     }
 
@@ -57,16 +60,25 @@ public class ResourcePack {
             return true;
         }
         //Check Update
-        String localMd5 = DigestUtils.md5Hex(Files.newInputStream(tmpFilePath));
-        String remoteMd5 = AssetUtil.getString(md5Url);
-        Log.debug("%s md5: %s, remote md5: %s", tmpFilePath, localMd5, remoteMd5);
+        return checkMd5(tmpFilePath, md5Url);
+    }
+
+    private boolean checkMd5(Path localFile, String md5Url) throws IOException {
+        String localMd5 = DigestUtils.md5Hex(Files.newInputStream(localFile));
+        if (remoteMd5 == null) {
+            remoteMd5 = AssetUtil.getString(md5Url);
+        }
+        Log.debug("%s md5: %s, remote md5: %s", localFile, localMd5, remoteMd5);
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
-    private void downloadFull(String fileUrl) throws IOException {
+    private void downloadFull(String fileUrl, String md5Url) throws IOException {
         try {
             Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
             AssetUtil.download(fileUrl, downloadTmp);
+            if (!checkMd5(downloadTmp, md5Url)) {
+                throw new IOException("Download MD5 not match");
+            }
             Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
             Log.debug(String.format("Updates temp file: %s", tmpFilePath));
         } catch (Exception e) {
