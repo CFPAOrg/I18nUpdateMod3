@@ -3,7 +3,8 @@
     "gameVersions": "[1.6.1,1.8.9]",
     "packFormat": 1,
     "convertFrom": [
-      "1.10.2"
+      "1.10.2",
+      "1.12.2"
     ]
   },
   {
@@ -34,16 +35,14 @@
     "gameVersions": "[1.13,1.14.4]",
     "packFormat": 4,
     "convertFrom": [
-      "1.16.5",
-      "1.12.2"
+      "1.16.5"
     ]
   },
   {
     "gameVersions": "[1.15,1.16.1]",
     "packFormat": 5,
     "convertFrom": [
-      "1.16.5",
-      "1.12.2"
+      "1.16.5"
     ]
   },
   {
