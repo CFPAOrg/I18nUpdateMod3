@@ -36,15 +36,23 @@ jobs:
         run: |
           ./gradlew clean shadowJar --info --stacktrace
       -
-        name: Publish
+        name: Publish Modrinth
+        if: ${{ !inputs.is-snapshot }}
+        env:
+          IS_SNAPSHOT: ${{ inputs.is-snapshot }}
+          CHANGE_LOG: ${{ inputs.change-log }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          ./gradlew modrinth modrinthSyncBody --info --stacktrace
+      -
+        name: Publish CurseForge
         if: ${{ !inputs.is-snapshot }}
         env:
           IS_SNAPSHOT: ${{ inputs.is-snapshot }}
           CHANGE_LOG: ${{ inputs.change-log }}
           CURSE_TOKEN: ${{ secrets.CURSE_TOKEN }}
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
-          ./gradlew curseforge modrinth --info --stacktrace
+          ./gradlew curseforge --info --stacktrace
       -
         uses: actions/upload-artifact@v3
         with:
