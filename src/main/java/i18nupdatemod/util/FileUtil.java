@@ -10,16 +10,16 @@ public class FileUtil {
     private static Path temporaryDirPath;
 
     public static void setResourcePackDirPath(Path path) {
-        saveMakeDir(path);
+        safeCreateDir(path);
         resourcePackDirPath = path;
     }
 
     public static void setTemporaryDirPath(Path temporaryDirPath) {
-        saveMakeDir(temporaryDirPath);
+        safeCreateDir(temporaryDirPath);
         FileUtil.temporaryDirPath = temporaryDirPath;
     }
 
-    private static void saveMakeDir(Path path) {
+    private static void safeCreateDir(Path path) {
         try {
             if (!Files.isDirectory(path)) {
                 Files.createDirectories(path);

@@ -77,7 +77,7 @@ public class ResourcePackConverter {
     private byte[] convertPackMeta(InputStream is, int packFormat, String description) {
         PackMeta meta = GSON.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), PackMeta.class);
         meta.pack.pack_format = packFormat;
-        meta.pack.description = description + meta.pack.description;
+        meta.pack.description = description;
         return GSON.toJson(meta).getBytes(StandardCharsets.UTF_8);
     }
 

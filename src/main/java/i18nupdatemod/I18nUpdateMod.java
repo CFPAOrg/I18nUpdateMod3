@@ -2,10 +2,11 @@ package i18nupdatemod;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import i18nupdatemod.core.AssetConfig;
 import i18nupdatemod.core.GameConfig;
+import i18nupdatemod.core.I18nConfig;
 import i18nupdatemod.core.ResourcePack;
 import i18nupdatemod.core.ResourcePackConverter;
+import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
 
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class I18nUpdateMod {
     public static final String MOD_ID = "i18nupdatemod";
@@ -23,7 +25,7 @@ public class I18nUpdateMod {
     private static final Gson GSON = new Gson();
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader) {
-        try (InputStream is = AssetConfig.class.getResourceAsStream("/fabric.mod.json")) {
+        try (InputStream is = I18nConfig.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
@@ -55,25 +57,25 @@ public class I18nUpdateMod {
 
         try {
             //Get asset
-            AssetConfig.AssetInfo assets = AssetConfig.getAsset(minecraftVersion, loader);
+            GameAssetDetail assets = I18nConfig.getAssetDetail(minecraftVersion, loader);
 
             //Update resource pack
             List<ResourcePack> languagePacks = new ArrayList<>();
-            for (AssetConfig.AssetInfo.AssetDownloadInfo it : assets.downloads) {
+            boolean convertNotNeed = assets.downloads.size() == 1 && assets.downloads.get(0).targetVersion.equals(minecraftVersion);
+            String applyFileName = assets.downloads.get(0).fileName;
+            for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
                 FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, it.targetVersion));
-                ResourcePack languagePack = new ResourcePack(it.fileName, assets.covertPackFormat == null);
+                ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
                 languagePack.checkUpdate(it.fileUrl, it.md5Url);
                 languagePacks.add(languagePack);
             }
-            String applyFileName = languagePacks.get(0).getFilename();
 
             //Convert resourcepack
-            if (assets.covertPackFormat != null) {
+            if (!convertNotNeed) {
                 FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, minecraftVersion));
                 applyFileName = assets.covertFileName;
                 ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
-                converter.convert(assets.covertPackFormat,
-                        languagePacks.size() > 1 ? "该包由两版本合并，若有错误请反馈！" : "这是自动转换的版本！不受官方支持！");
+                converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads));
             }
 
             //Apply resource pack
@@ -85,5 +87,14 @@ public class I18nUpdateMod {
             Log.warning(String.format("Failed to update resource pack: %s", e));
 //            e.printStackTrace();
         }
+    }
+
+    private static String getResourcePackDescription(List<GameAssetDetail.AssetDownloadDetail> downloads) {
+        return downloads.size() > 1 ?
+                String.format("该包由%s版本合并\n作者：CFPA团队及汉化项目贡献者",
+                        downloads.stream().map(it -> it.targetVersion).collect(Collectors.joining("和"))) :
+                String.format("该包对应的官方支持版本为%s\n作者：CFPA团队及汉化项目贡献者",
+                        downloads.get(0).targetVersion);
+
     }
 }
