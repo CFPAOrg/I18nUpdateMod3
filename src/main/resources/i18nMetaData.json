@@ -13,7 +13,8 @@
       "gameVersions": "[1.9,1.10.2]",
       "packFormat": 2,
       "convertFrom": [
-        "1.10.2"
+        "1.10.2",
+        "1.12.2"
       ]
     },
     {
@@ -63,7 +64,7 @@
       "gameVersions": "[1.19,1.19.2]",
       "packFormat": 9,
       "convertFrom": [
-        "1.19.4",
+        "1.19.3",
         "1.18.2"
       ]
     },
@@ -71,7 +72,7 @@
       "gameVersions": "[1.19.3,1.19.3]",
       "packFormat": 12,
       "convertFrom": [
-        "1.19.4",
+        "1.19.3",
         "1.18.2"
       ]
     },
@@ -79,7 +80,7 @@
       "gameVersions": "[1.19.4,1.19.4]",
       "packFormat": 13,
       "convertFrom": [
-        "1.19.4",
+        "1.19.3",
         "1.18.2"
       ]
     },
@@ -87,7 +88,7 @@
       "gameVersions": "[1.20,1.20.1]",
       "packFormat": 15,
       "convertFrom": [
-        "1.19.4",
+        "1.19.3",
         "1.18.2"
       ]
     }
@@ -131,7 +132,7 @@
     },
     {
       "loader": "Forge",
-      "targetVersion": "1.19.4",
+      "targetVersion": "1.19.3",
       "filename": "Minecraft-Mod-Language-Modpack-1-19.zip",
       "md5Filename": "1.19.md5"
     }
