@@ -1,5 +1,6 @@
 package i18nupdatemod.util;
 
+import java.io.File;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,6 +19,13 @@ public class Log {
 
     public static void setLogFile(Path path) {
         try {
+            File file = path.toFile();
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            } else {
+                if (!file.canWrite()) throw new IllegalStateException("Log file " + path + " can't be write");
+            }
             fileWriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
         } catch (Exception e) {
             System.err.printf("Error setting log file: %s%n\r\n", e);
