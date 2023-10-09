@@ -12,38 +12,42 @@ public class Version implements Comparable<Version> {
     private final List<Integer> versions = new ArrayList<>();
 
     public static @Nullable Version from(String version) {
-        if (version == null || version.equals("")) {
+        if (version == null || version.isEmpty()) {
             return null;
         }
         return new Version(version);
     }
 
-    private Version(String version) {
+    private Version(@NotNull String version) {
         this.version = version;
         parseVersion(version);
     }
 
-    private void parseVersion(String version) {
-        int state = 0;
+    enum VersionParseState {
+        START, READING_NUMBER
+    }
+
+    private void parseVersion(@NotNull String version) {
+        VersionParseState state = VersionParseState.START;
         StringBuilder buffer = new StringBuilder();
         for (char c : version.toCharArray()) {
             switch (state) {
-                case 0:
-                    if (isNumber(c)) {
+                case START:
+                    if (Character.isDigit(c)) {
                         buffer.append(c);
-                        state = 1;
+                        state = VersionParseState.READING_NUMBER;
                     } else {
                         return;
                     }
                     break;
-                case 1:
-                    if (isNumber(c)) {
+                case READING_NUMBER:
+                    if (Character.isDigit(c)) {
                         buffer.append(c);
                     } else {
                         versions.add(Integer.parseInt(buffer.toString()));
                         buffer = new StringBuilder();
                         if (c == '.') {
-                            state = 0;
+                            state = VersionParseState.START;
                         } else {
                             return;
                         }
@@ -54,18 +58,13 @@ public class Version implements Comparable<Version> {
         versions.add(Integer.parseInt(buffer.toString()));
     }
 
-    private boolean isNumber(char c) {
-        return c >= '0' && c <= '9';
-    }
-
     @Override
     public int compareTo(@NotNull Version o) {
         int min = Math.min(versions.size(), o.versions.size());
         for (int i = 0; i < min; ++i) {
-            if (Objects.equals(versions.get(i), o.versions.get(i))) {
-                continue;
+            if (!Objects.equals(versions.get(i), o.versions.get(i))) {
+                return Integer.compare(versions.get(i), o.versions.get(i));
             }
-            return Integer.compare(versions.get(i), o.versions.get(i));
         }
         return Integer.compare(versions.size(), o.versions.size());
     }

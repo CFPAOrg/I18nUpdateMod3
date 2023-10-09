@@ -1,15 +1,17 @@
 package i18nupdatemod.core;
 
 import i18nupdatemod.util.AssetUtil;
+import i18nupdatemod.util.DigestUtil;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 public class ResourcePack {
@@ -37,7 +39,7 @@ public class ResourcePack {
         }
     }
 
-    public void checkUpdate(String fileUrl, String md5Url) throws IOException {
+    public void checkUpdate(String fileUrl, String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
         if (isUpToDate(md5Url)) {
             Log.debug("Already up to date.");
             return;
@@ -47,7 +49,7 @@ public class ResourcePack {
         //In the future, we will download patch file and merge local file
     }
 
-    private boolean isUpToDate(String md5Url) throws IOException {
+    private boolean isUpToDate(String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
         //Not exist -> Update
         if (!Files.exists(tmpFilePath)) {
             Log.debug("Local file %s not exist.", tmpFilePath);
@@ -63,8 +65,8 @@ public class ResourcePack {
         return checkMd5(tmpFilePath, md5Url);
     }
 
-    private boolean checkMd5(Path localFile, String md5Url) throws IOException {
-        String localMd5 = DigestUtils.md5Hex(Files.newInputStream(localFile));
+    private boolean checkMd5(Path localFile, String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
+        String localMd5 = DigestUtil.md5Hex(localFile);
         if (remoteMd5 == null) {
             remoteMd5 = AssetUtil.getString(md5Url);
         }

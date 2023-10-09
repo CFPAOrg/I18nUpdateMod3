@@ -1,5 +1,7 @@
 package i18nupdatemod.util;
 
+import org.jetbrains.annotations.NotNull;
+
 public class VersionRange {
     private Version fromVersion;
     private boolean containsLeft;
@@ -10,13 +12,17 @@ public class VersionRange {
         parseVersionRange(range);
     }
 
-    private void parseVersionRange(String range) {
-        int state = 0;
+    enum RangeParseState {
+        START, READING_FIRST_VERSION, READING_SECOND_VERSION
+    }
+
+    private void parseVersionRange(@NotNull String range) {
+        RangeParseState state = RangeParseState.START;
         StringBuilder buffer = new StringBuilder();
         for (char c : range.toCharArray()) {
             switch (state) {
-                case 0:
-                    state = 1;
+                case START:
+                    state = RangeParseState.READING_FIRST_VERSION;
                     if (c == '[') {
                         containsLeft = true;
                     } else if (c == '(') {
@@ -25,16 +31,16 @@ public class VersionRange {
                         throw new IllegalArgumentException("Range illegal");
                     }
                     break;
-                case 1:
+                case READING_FIRST_VERSION:
                     if (c == ',') {
                         fromVersion = Version.from(buffer.toString());
                         buffer = new StringBuilder();
-                        state = 2;
+                        state = RangeParseState.READING_SECOND_VERSION;
                     } else {
                         buffer.append(c);
                     }
                     break;
-                case 2:
+                case READING_SECOND_VERSION:
                     if (c == ']') {
                         toVersion = Version.from(buffer.toString());
                         containsRight = true;
@@ -51,7 +57,7 @@ public class VersionRange {
         throw new IllegalArgumentException("Range illegal");
     }
 
-    public boolean contains(Version version) {
+    public boolean contains(@NotNull Version version) {
         if (fromVersion != null) {
             int cmp = version.compareTo(fromVersion);
             if (cmp < 0 || (!containsLeft && cmp == 0)) {

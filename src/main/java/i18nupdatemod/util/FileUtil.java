@@ -64,7 +64,6 @@ public class FileUtil {
             return;
         }
 
-//        Log.info("Synchronizing: %s -> %s", from, to);
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
         //Ensure same last modified time
         Files.setLastModifiedTime(to, Files.getLastModifiedTime(from));
