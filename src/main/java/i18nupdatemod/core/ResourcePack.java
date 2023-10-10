@@ -84,7 +84,7 @@ public class ResourcePack {
             Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
             Log.debug(String.format("Updates temp file: %s", tmpFilePath));
         } catch (Exception e) {
-            Log.warning("Error which downloading: ", e);
+            Log.warning("Error while downloading: %s", e);
         }
         if (!Files.exists(tmpFilePath)) {
             throw new FileNotFoundException("Tmp file not found.");

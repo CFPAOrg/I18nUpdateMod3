@@ -18,12 +18,18 @@ public class DigestUtil {
                 dig.update(buf, 0, read);
             }
 
-            byte[] data = dig.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte d : data) {
-                sb.append(Integer.toHexString(d));
-            }
-            return sb.toString();
+            return hexString(dig.digest());
         }
+    }
+
+    private static final String HEX = "0123456789ABCDEF";
+
+    public static String hexString(byte[] data) {
+        StringBuilder sb = new StringBuilder();
+        for (byte d : data) {
+            sb.append(HEX.charAt((d & 0xf0) >>> 4));
+            sb.append(HEX.charAt(d & 0xf));
+        }
+        return sb.toString();
     }
 }

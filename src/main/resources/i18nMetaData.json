@@ -103,44 +103,44 @@
   ],
   "assets": [
     {
-      "loader": "Forge",
       "targetVersion": "1.10.2",
+      "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-10-2.zip",
       "md5Filename": "1.10.2.md5"
     },
     {
-      "loader": "Forge",
       "targetVersion": "1.12.2",
+      "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack.zip",
       "md5Filename": "1.12.2.md5"
     },
     {
-      "loader": "Forge",
       "targetVersion": "1.16.5",
+      "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-16.zip",
       "md5Filename": "1.16.md5"
     },
     {
-      "loader": "Fabric",
       "targetVersion": "1.16.5",
+      "loader": "Fabric",
       "filename": "Minecraft-Mod-Language-Modpack-1-16-Fabric.zip",
       "md5Filename": "1.16-fabric.md5"
     },
     {
-      "loader": "Forge",
       "targetVersion": "1.18.2",
+      "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-18.zip",
       "md5Filename": "1.18.md5"
     },
     {
-      "loader": "Fabric",
       "targetVersion": "1.18.2",
+      "loader": "Fabric",
       "filename": "Minecraft-Mod-Language-Modpack-1-18-Fabric.zip",
       "md5Filename": "1.18-fabric.md5"
     },
     {
-      "loader": "Forge",
       "targetVersion": "1.19.3",
+      "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-19.zip",
       "md5Filename": "1.19.md5"
     }

@@ -1,8 +1,8 @@
 plugins {
-    id("com.github.johnrengelman.shadow") version ("7.1.2")
     id("java")
-    id("com.modrinth.minotaur") version "2.6.0"
-    id("io.github.CDAGaming.cursegradle") version "1.6.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.modrinth.minotaur") version "2.8.4"
+    id("io.github.CDAGaming.cursegradle") version "1.6.1"
 }
 
 group = "i18nupdatemod"
@@ -43,17 +43,17 @@ configurations.configureEach {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     implementation("net.runelite.archive-patcher:archive-patcher-applier:1.2")
-    compileOnly("org.jetbrains:annotations:24.0.0")
+    compileOnly("org.jetbrains:annotations:24.0.1")
 
-    implementation("net.fabricmc:fabric-loader:0.14.12")
+    implementation("net.fabricmc:fabric-loader:0.14.22")
     implementation("cpw.mods:modlauncher:8.1.3")
     implementation("net.minecraft:launchwrapper:1.12")
 
-    implementation("commons-io:commons-io:2.11.0")
-    implementation("org.ow2.asm:asm:9.4")
+    implementation("commons-io:commons-io:2.14.0")
+    implementation("org.ow2.asm:asm:9.6")
     implementation("com.google.code.gson:gson:2.10.1")
 
 }
