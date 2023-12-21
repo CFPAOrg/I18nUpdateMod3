@@ -28,76 +28,87 @@
       "gameVersions": "[1.13,1.14.4]",
       "packFormat": 4,
       "convertFrom": [
-        "1.16.5"
+        "1.16"
       ]
     },
     {
       "gameVersions": "[1.15,1.16.1]",
       "packFormat": 5,
       "convertFrom": [
-        "1.16.5"
+        "1.16"
       ]
     },
     {
       "gameVersions": "[1.16.2,1.16.5]",
       "packFormat": 6,
       "convertFrom": [
-        "1.16.5"
+        "1.16"
       ]
     },
     {
       "gameVersions": "[1.17,1.17.1]",
       "packFormat": 7,
       "convertFrom": [
-        "1.18.2",
-        "1.16.5"
+        "1.18",
+        "1.16"
       ]
     },
     {
       "gameVersions": "[1.18,1.18.2]",
       "packFormat": 8,
       "convertFrom": [
-        "1.18.2"
+        "1.18"
       ]
     },
     {
       "gameVersions": "[1.19,1.19.2]",
       "packFormat": 9,
       "convertFrom": [
-        "1.19.3",
-        "1.18.2"
+        "1.19",
+        "1.18"
       ]
     },
     {
       "gameVersions": "[1.19.3,1.19.3]",
       "packFormat": 12,
       "convertFrom": [
-        "1.19.3",
-        "1.18.2"
+        "1.19",
+        "1.18"
       ]
     },
     {
       "gameVersions": "[1.19.4,1.19.4]",
       "packFormat": 13,
       "convertFrom": [
-        "1.19.3",
-        "1.18.2"
+        "1.19",
+        "1.18"
       ]
     },
     {
       "gameVersions": "[1.20,1.20.1]",
       "packFormat": 15,
       "convertFrom": [
-        "1.19.3",
-        "1.18.2"
+        "1.20",
+        "1.19",
+        "1.18"
       ]
     },
     {
       "gameVersions": "[1.20.2,1.20.2]",
       "packFormat": 18,
       "convertFrom": [
-        "1.19.3",
-        "1.18.2"
+        "1.20",
+        "1.19",
+        "1.18"
+      ]
+    },
+    {
+      "gameVersions": "[1.20.3,1.20.4]",
+      "packFormat": 22,
+      "convertFrom": [
+        "1.20",
+        "1.19",
+        "1.18"
       ]
     }
   ],
@@ -115,34 +126,46 @@
       "md5Filename": "1.12.2.md5"
     },
     {
-      "targetVersion": "1.16.5",
+      "targetVersion": "1.16",
       "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-16.zip",
       "md5Filename": "1.16.md5"
     },
     {
-      "targetVersion": "1.16.5",
+      "targetVersion": "1.16",
       "loader": "Fabric",
       "filename": "Minecraft-Mod-Language-Modpack-1-16-Fabric.zip",
       "md5Filename": "1.16-fabric.md5"
     },
     {
-      "targetVersion": "1.18.2",
+      "targetVersion": "1.18",
       "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-18.zip",
       "md5Filename": "1.18.md5"
     },
     {
-      "targetVersion": "1.18.2",
+      "targetVersion": "1.18",
       "loader": "Fabric",
       "filename": "Minecraft-Mod-Language-Modpack-1-18-Fabric.zip",
       "md5Filename": "1.18-fabric.md5"
     },
     {
-      "targetVersion": "1.19.3",
+      "targetVersion": "1.19",
       "loader": "Forge",
       "filename": "Minecraft-Mod-Language-Modpack-1-19.zip",
       "md5Filename": "1.19.md5"
+    },
+    {
+      "targetVersion": "1.20",
+      "loader": "Forge",
+      "filename": "Minecraft-Mod-Language-Modpack-1-20.zip",
+      "md5Filename": "1.20.md5"
+    },
+    {
+      "targetVersion": "1.20",
+      "loader": "Fabric",
+      "filename": "Minecraft-Mod-Language-Modpack-1-20-Fabric.zip",
+      "md5Filename": "1.20-fabric.md5"
     }
   ]
 }
