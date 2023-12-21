@@ -22,7 +22,7 @@ public class I18nUpdateMod {
     public static final String MOD_ID = "i18nupdatemod";
     public static String MOD_VERSION;
 
-    private static final Gson GSON = new Gson();
+    public static final Gson GSON = new Gson();
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader) {
         try (InputStream is = I18nConfig.class.getResourceAsStream("/i18nMetaData.json")) {

@@ -25,7 +25,7 @@ public class FabricLoaderMod implements ClientModInitializer {
 
     private String getMcVersion() {
         try {
-            //Fabric
+            // Fabric
             return (String) Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
                     .get("INSTANCE")
                     .get("getGameProvider()")
@@ -34,7 +34,7 @@ public class FabricLoaderMod implements ClientModInitializer {
 
         }
         try {
-            //Quilt
+            // Quilt
             return (String) Reflection.clazz("org.quiltmc.loader.impl.QuiltLoaderImpl")
                     .get("INSTANCE")
                     .get("getGameProvider()")

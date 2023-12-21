@@ -40,25 +40,27 @@ public class LaunchWrapperTweaker implements ITweaker {
 
     private String getMcVersion() {
         try {
-            //1.8.8-1.12.2
-            return (String) Reflection.clazz("net.minecraftforge.common.ForgeVersion").get("mcVersion").get();
-        } catch (Exception ignored) {
-        }
-
-        try {
-            //1.6-1.7.10
-            //1.6: https://github.com/MinecraftForge/FML/blob/902772ed0cb6c22c4cd7ad9b0ec7a02961b5e016/common/cpw/mods/fml/relauncher/FMLInjectionData.java#L32
-            //1.7.10: https://github.com/MinecraftForge/MinecraftForge/blob/1.7.10/fml/src/main/java/cpw/mods/fml/relauncher/FMLInjectionData.java#L32
+            // 1.6~1.7.10
+            // 1.6: https://github.com/MinecraftForge/FML/blob/16launch/common/cpw/mods/fml/relauncher/FMLInjectionData.java#L32
+            // 1.7.10: https://github.com/MinecraftForge/MinecraftForge/blob/1.7.10/fml/src/main/java/cpw/mods/fml/relauncher/FMLInjectionData.java#L32
             return (String)
                     Reflection.clazz("cpw.mods.fml.relauncher.FMLInjectionData").get("mccversion").get();
         } catch (Exception ignored) {
         }
 
         try {
-            //1.8
-            //https://github.com/MinecraftForge/FML/blob/d4ded9d6e218ac097990e836676bbe22b47e5966/src/main/java/net/minecraftforge/fml/relauncher/FMLInjectionData.java#L32
+            // 1.8
+            // https://github.com/MinecraftForge/FML/blob/1.8/src/main/java/net/minecraftforge/fml/relauncher/FMLInjectionData.java#L32
             return (String)
                     Reflection.clazz("net.minecraftforge.fml.relauncher.FMLInjectionData").get("mccversion").get();
+        } catch (Exception ignored) {
+        }
+
+        try {
+            // 1.8.8~1.12.2
+            // 1.8.8: https://github.com/MinecraftForge/MinecraftForge/blob/1.8.8/src/main/java/net/minecraftforge/common/ForgeVersion.java#L42
+            // 1.12.2: https://github.com/MinecraftForge/MinecraftForge/blob/1.12.x/src/main/java/net/minecraftforge/common/ForgeVersion.java#L64
+            return (String) Reflection.clazz("net.minecraftforge.common.ForgeVersion").get("mcVersion").get();
         } catch (Exception ignored) {
         }
         return null;
