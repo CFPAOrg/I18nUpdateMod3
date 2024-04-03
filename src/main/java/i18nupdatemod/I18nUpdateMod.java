@@ -12,6 +12,7 @@ import i18nupdatemod.util.Log;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -32,11 +33,8 @@ public class I18nUpdateMod {
         }
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
-        String userHome = System.getProperty("user.home");
-        if (userHome.equals("null")) {
-            userHome = minecraftPath.toString();
-        }
-        Log.debug(String.format("User home: %s", userHome));
+        String localStorage = getLocalStoragePos(minecraftPath);
+        Log.debug(String.format("Local Storage Pos: %s", localStorage));
 
         try {
             Class.forName("com.netease.mc.mod.network.common.Library");
@@ -64,7 +62,7 @@ public class I18nUpdateMod {
             boolean convertNotNeed = assets.downloads.size() == 1 && assets.downloads.get(0).targetVersion.equals(minecraftVersion);
             String applyFileName = assets.downloads.get(0).fileName;
             for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
-                FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, it.targetVersion));
+                FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
                 ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
                 languagePack.checkUpdate(it.fileUrl, it.md5Url);
                 languagePacks.add(languagePack);
@@ -72,7 +70,7 @@ public class I18nUpdateMod {
 
             //Convert resourcepack
             if (!convertNotNeed) {
-                FileUtil.setTemporaryDirPath(Paths.get(userHome, "." + MOD_ID, minecraftVersion));
+                FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
                 applyFileName = assets.covertFileName;
                 ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
                 converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads));
@@ -96,5 +94,24 @@ public class I18nUpdateMod {
                 String.format("该包对应的官方支持版本为%s\n作者：CFPA团队及汉化项目贡献者",
                         downloads.get(0).targetVersion);
 
+    }
+
+    public static String getLocalStoragePos(Path minecraftPath) {
+        String userHome = System.getProperty("user.home");
+        if (userHome.equals("null")) {
+            return minecraftPath.toString();
+        }
+        String oldPos = userHome + "/." + MOD_ID;
+        if (Files.exists(Paths.get(oldPos))) {
+            return oldPos;
+        }
+
+        String localStorage;
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+            localStorage = userHome + "\\AppData\\Local";
+        } else {
+            localStorage = userHome + "/.local/share";
+        }
+        return localStorage;
     }
 }
