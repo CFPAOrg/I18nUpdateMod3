@@ -98,20 +98,19 @@ public class I18nUpdateMod {
 
     public static String getLocalStoragePos(Path minecraftPath) {
         String userHome = System.getProperty("user.home");
-        if (userHome.equals("null")) {
-            return minecraftPath.toString();
-        }
-        String oldPos = userHome + "/." + MOD_ID;
-        if (Files.exists(Paths.get(oldPos))) {
-            return oldPos;
+        Path oldPath = Paths.get(userHome, "." + MOD_ID);
+        if (Files.exists(oldPath)) {
+            return userHome;
         }
 
-        String localStorage;
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-            localStorage = userHome + "\\AppData\\Local";
+        String localAppData = System.getenv("LocalAppData");
+        String xdgDataHome = System.getenv("XDG_DATA_HOME");
+        if (localAppData != null) {
+            return localAppData;
+        } else if (xdgDataHome != null) {
+            return xdgDataHome;
         } else {
-            localStorage = userHome + "/.local/share";
+            return minecraftPath.toString();
         }
-        return localStorage;
     }
 }
