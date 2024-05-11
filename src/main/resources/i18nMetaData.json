@@ -112,7 +112,7 @@
       ]
     },
     {
-      "gameVersions": "[1.20.5,1.20.5]",
+      "gameVersions": "[1.20.5,1.20.6]",
       "packFormat": 32,
       "convertFrom": [
         "1.20",
