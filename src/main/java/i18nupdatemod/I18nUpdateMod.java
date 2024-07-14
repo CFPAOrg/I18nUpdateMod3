@@ -26,7 +26,7 @@ public class I18nUpdateMod {
     public static final Gson GSON = new Gson();
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader) {
-        try (InputStream is = I18nConfig.class.getResourceAsStream("/i18nMetaData.json")) {
+        try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
