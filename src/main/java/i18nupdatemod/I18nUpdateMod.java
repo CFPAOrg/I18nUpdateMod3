@@ -9,7 +9,6 @@ import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
-import sun.awt.OSInfo;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +18,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -106,12 +104,12 @@ public class I18nUpdateMod {
         if (Files.exists(oldPath)) {
             return userHome.toString();
         }
-        
+
         // https://developer.apple.com/documentation/foundation/url/3988452-applicationsupportdirectory#discussion
         String macAppSupport = System.getProperty("os.name").contains("OS X") ?
                 userHome.resolve("Library/Application Support").toString() : null;
         String localAppData = System.getenv("LocalAppData");
-        
+
         // XDG_DATA_HOME fallbacks to ~/.local/share
         // https://specifications.freedesktop.org/basedir-spec/latest/#variables
         String xdgDataHome = System.getenv("XDG_DATA_HOME");
