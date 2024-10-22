@@ -124,9 +124,18 @@
       "gameVersions": "[1.21,1.21.1]",
       "packFormat": 34,
       "convertFrom": [
+        "1.21",
         "1.20",
-        "1.19",
-        "1.18"
+        "1.19"
+      ]
+    },
+    {
+      "gameVersions": "[1.21.2,1.21.2]",
+      "packFormat": 42,
+      "convertFrom": [
+        "1.21",
+        "1.20",
+        "1.19"
       ]
     }
   ],
@@ -184,6 +193,18 @@
       "loader": "Fabric",
       "filename": "Minecraft-Mod-Language-Modpack-1-20-Fabric.zip",
       "md5Filename": "1.20-fabric.md5"
+    },
+    {
+      "targetVersion": "1.21",
+      "loader": "Forge",
+      "filename": "Minecraft-Mod-Language-Modpack-1-21.zip",
+      "md5Filename": "1.21.md5"
+    },
+    {
+      "targetVersion": "1.21",
+      "loader": "Fabric",
+      "filename": "Minecraft-Mod-Language-Modpack-1-21-Fabric.zip",
+      "md5Filename": "1.21-fabric.md5"
     }
   ]
 }
