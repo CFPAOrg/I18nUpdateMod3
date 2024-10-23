@@ -17,7 +17,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class I18nUpdateMod {
     public static final String MOD_ID = "i18nupdatemod";
@@ -97,20 +99,26 @@ public class I18nUpdateMod {
     }
 
     public static String getLocalStoragePos(Path minecraftPath) {
-        String userHome = System.getProperty("user.home");
-        Path oldPath = Paths.get(userHome, "." + MOD_ID);
+        Path userHome = Paths.get(System.getProperty("user.home"));
+        Path oldPath = userHome.resolve("." + MOD_ID);
         if (Files.exists(oldPath)) {
-            return userHome;
+            return userHome.toString();
         }
 
+        // https://developer.apple.com/documentation/foundation/url/3988452-applicationsupportdirectory#discussion
+        String macAppSupport = System.getProperty("os.name").contains("OS X") ?
+                userHome.resolve("Library/Application Support").toString() : null;
         String localAppData = System.getenv("LocalAppData");
+
+        // XDG_DATA_HOME fallbacks to ~/.local/share
+        // https://specifications.freedesktop.org/basedir-spec/latest/#variables
         String xdgDataHome = System.getenv("XDG_DATA_HOME");
-        if (localAppData != null) {
-            return localAppData;
-        } else if (xdgDataHome != null) {
-            return xdgDataHome;
-        } else {
-            return minecraftPath.toString();
+        if (xdgDataHome == null) {
+            xdgDataHome = userHome.resolve(".local/share").toString();
         }
+
+        return Stream.of(localAppData, macAppSupport).filter(
+                Objects::nonNull
+        ).findFirst().orElse(xdgDataHome);
     }
 }
