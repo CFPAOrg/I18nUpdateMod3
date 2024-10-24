@@ -43,7 +43,7 @@ public class I18nConfig {
         return i18nMetaData.games.stream().filter(it -> {
             VersionRange range = new VersionRange(it.gameVersions);
             return range.contains(version);
-        }).findFirst().orElseThrow(IllegalStateException::new);
+        }).findFirst().orElseThrow(() -> new IllegalStateException(String.format("Version %s not found in i18n meta", minecraftVersion)));
     }
 
     private static AssetMetaData getAssetMetaData(String minecraftVersion, String loader) {
@@ -58,7 +58,7 @@ public class I18nConfig {
         GameMetaData convert = getGameMetaData(minecraftVersion);
         GameAssetDetail ret = new GameAssetDetail();
 
-        ret.downloads = convert.convertFrom.stream().map(it->getAssetMetaData(it,loader)).map(it -> {
+        ret.downloads = convert.convertFrom.stream().map(it -> getAssetMetaData(it, loader)).map(it -> {
             GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
             adi.fileName = it.filename;
             adi.fileUrl = CFPA_ASSET_ROOT + it.filename;
