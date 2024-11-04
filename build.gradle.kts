@@ -80,7 +80,7 @@ modrinth {
     versionType.set("release")
     uploadFile.set(tasks["shadowJar"])
     gameVersions.set(supportMinecraftVersions)
-    loaders.set(listOf("fabric", "forge", "quilt"))
+    loaders.set(listOf("fabric", "forge", "neoforge", "quilt"))
     syncBodyFrom.set(rootProject.file("README.md").readText())
     changelog.set(System.getenv("CHANGE_LOG"))
 }
