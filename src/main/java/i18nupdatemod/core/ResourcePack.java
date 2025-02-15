@@ -39,14 +39,25 @@ public class ResourcePack {
         }
     }
 
-    public void checkUpdate(String fileUrl, String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
+    public void checkUpdate(String fileUrl, String md5Url) throws IOException, NoSuchAlgorithmException, URISyntaxException {
         if (isUpToDate(md5Url)) {
             Log.debug("Already up to date.");
             return;
         }
-        //In this time, we can only download full file
-        downloadFull(fileUrl, md5Url);
-        //In the future, we will download patch file and merge local file
+        int retryCount = 3;
+        while (retryCount > 0) {
+            try {
+                downloadFile(fileUrl, md5Url);
+                return;
+            } catch (Exception e) {
+                retryCount--;
+                if (retryCount == 0) {
+                    Log.debug(String.format("Failed to download resource pack at %s after 3 attempts: %s", fileUrl, e.getMessage()));
+                    Log.warning("Failed to download resource pack.");
+                    return;
+                }
+            }
+        }
     }
 
     private boolean isUpToDate(String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
@@ -74,7 +85,7 @@ public class ResourcePack {
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
-    private void downloadFull(String fileUrl, String md5Url) throws IOException {
+    private void downloadFile(String fileUrl, String md5Url) throws IOException {
         try {
             Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
             AssetUtil.download(fileUrl, downloadTmp);
