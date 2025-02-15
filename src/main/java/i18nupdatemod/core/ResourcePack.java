@@ -47,7 +47,7 @@ public class ResourcePack {
         int retryCount = 3;
         while (retryCount > 0) {
             try {
-                downloadFile(fileUrl, md5Url);
+                downloadFull(fileUrl, md5Url);
                 return;
             } catch (Exception e) {
                 retryCount--;
@@ -85,7 +85,7 @@ public class ResourcePack {
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
-    private void downloadFile(String fileUrl, String md5Url) throws IOException {
+    private void downloadFull(String fileUrl, String md5Url) throws IOException {
         try {
             Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
             AssetUtil.download(fileUrl, downloadTmp);
