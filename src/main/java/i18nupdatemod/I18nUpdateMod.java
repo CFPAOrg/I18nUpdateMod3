@@ -92,6 +92,8 @@ public class I18nUpdateMod {
             } finally {
                 executor.shutdown();
             }
+
+            //Convert resourcepack
             if (!convertNotNeed) {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
                 applyFileName = assets.covertFileName;

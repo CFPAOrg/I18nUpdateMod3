@@ -47,7 +47,9 @@ public class ResourcePack {
         int retryCount = 3;
         while (retryCount > 0) {
             try {
+                //In this time, we can only download full file
                 downloadFull(fileUrl, md5Url);
+                //In the future, we will download patch file and merge local file
                 return;
             } catch (Exception e) {
                 retryCount--;
