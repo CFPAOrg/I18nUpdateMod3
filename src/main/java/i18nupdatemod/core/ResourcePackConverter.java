@@ -32,7 +32,7 @@ public class ResourcePackConverter {
         this.tmpFilePath = FileUtil.getTemporaryPath(filename);
     }
 
-    public void convert(int packFormat, String description) throws Exception {
+    public void convert(int packFormat, String description, HashSet<String> modDomainsSet) throws Exception {
         Set<String> fileList = new HashSet<>();
         try (ZipOutputStream zos = new ZipOutputStream(
                 Files.newOutputStream(tmpFilePath),
@@ -44,6 +44,10 @@ public class ResourcePackConverter {
                     for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
                         ZipEntry ze = e.nextElement();
                         String name = ze.getName();
+                        if (name.split("/").length >= 2 && !modDomainsSet.contains(name.split("/")[1])) {
+                            continue;
+                        }
+                        //Log.debug(name);
                         // Don't put same file
                         if (fileList.contains(name)) {
 //                            Log.debug(name + ": DUPLICATE");

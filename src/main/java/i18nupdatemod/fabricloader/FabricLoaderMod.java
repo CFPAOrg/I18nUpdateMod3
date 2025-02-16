@@ -5,11 +5,9 @@ import i18nupdatemod.util.Log;
 import i18nupdatemod.util.Reflection;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.impl.ModContainerImpl;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 
 //1.14-latest
@@ -50,25 +48,23 @@ public class FabricLoaderMod implements ClientModInitializer {
     }
 
 
-    private List<String> getMods(){
-        List<String> modList = null;
-         try {
+    private HashSet<String> getMods() {
+        HashSet<String> modList = new HashSet<>();
+        try {
             // Fabric
-             @SuppressWarnings("unchecked")
-            final Map<String, Object> instance = (Map<String, Object>)Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
+            @SuppressWarnings("unchecked") final Map<String, Object> instance = (Map<String, Object>) Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
                     .get("INSTANCE")
                     .get("modMap").get();
-            modList = new ArrayList<>(instance.keySet());
-         } catch (Exception ignored) {
+            modList = new HashSet<>(instance.keySet());
+        } catch (Exception ignored) {
 
         }
         try {
             // Quilt
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> instance = (Map<String, Object>)Reflection.clazz("org.quiltmc.loader.impl.QuiltLoaderImpl")
+            @SuppressWarnings("unchecked") final Map<String, Object> instance = (Map<String, Object>) Reflection.clazz("org.quiltmc.loader.impl.QuiltLoaderImpl")
                     .get("INSTANCE")
                     .get("modMap").get();
-            modList = new ArrayList<>(instance.keySet());
+            modList = new HashSet<>(instance.keySet());
         } catch (Exception ignored) {
 
         }

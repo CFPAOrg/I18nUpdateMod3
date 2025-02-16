@@ -28,14 +28,6 @@ public class ModLauncherService implements ITransformationService {
     @Override
     public void initialize(IEnvironment environment) {
         Optional<Path> minecraftPath = environment.getProperty(IEnvironment.Keys.GAMEDIR.get());
-        // 没法拿到i18n后面加载的模组
-        List<Map<String,String>> tmp = environment.getProperty(IEnvironment.Keys.MODLIST.get()).orElse(null);
-        List<String> modList = new ArrayList<>();
-        if (tmp != null) {
-            for (Map<String, String> map : tmp) {
-                modList.add(map.get("name"));
-            }
-        }
         if (!minecraftPath.isPresent()) {
             Log.warning("Minecraft path not found");
             return;
@@ -46,7 +38,7 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", modList);
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", new HashSet<>());
     }
 
     @Override

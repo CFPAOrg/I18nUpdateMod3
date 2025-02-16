@@ -10,16 +10,16 @@ import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,17 +29,21 @@ public class I18nUpdateMod {
 
     public static final Gson GSON = new Gson();
 
-    public static void init(Path minecraftPath, String minecraftVersion, String loader,@NotNull List<String> modList) {
+    public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull HashSet<String> modDomainsSet) {
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
         }
-        if(modList.isEmpty()){
-            Log.debug("modList: " + modList);
-        }else{
-            Log.debug("modList is null");
+
+        Log.debug("modList from loader:" + modDomainsSet);
+        if ("Forge".equals(loader)) {
+            modDomainsSet = getModDomainsFromModsFolder(minecraftPath, minecraftVersion, loader);
+            Log.debug("modList from mods folder: " + modDomainsSet);
+
         }
+        modDomainsSet.remove("i18nupdatemod");
+
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
         String localStorage = getLocalStoragePos(minecraftPath);
@@ -82,7 +86,7 @@ public class I18nUpdateMod {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
                 applyFileName = assets.covertFileName;
                 ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
-                converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads));
+                converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads), modDomainsSet);
             }
 
             //Apply resource pack
@@ -128,4 +132,34 @@ public class I18nUpdateMod {
                 Objects::nonNull
         ).findFirst().orElse(xdgDataHome);
     }
+
+    private static HashSet<String> getModDomainsFromModsFolder(Path minecraftPath, String minecraftVersion, String loader) {
+        HashSet<String> modDomainSet = new HashSet<>();
+        Path modsPath = minecraftPath.resolve("mods");
+        String[] modsNamesList = modsPath.toFile().list((dir, name) -> name.endsWith(".jar"));
+        if (modsNamesList != null) {
+            for (String name : modsNamesList) {
+                modDomainSet.addAll(getModDomainFromAsset(modsPath.resolve(name).toFile()));
+            }
+        }
+        return modDomainSet;
+    }
+
+    private static HashSet<String> getModDomainFromAsset(File modsPath) {
+        HashSet<String> modList = new HashSet<>();
+        try (JarFile jarFile = new JarFile(modsPath)) {
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                String path = entry.getName();
+                // 匹配 assets/xxx/
+                if (path.startsWith("assets/") && path.split("/").length >= 2) {
+                    modList.add(path.split("/")[1]);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return modList;
+    }
+
 }
