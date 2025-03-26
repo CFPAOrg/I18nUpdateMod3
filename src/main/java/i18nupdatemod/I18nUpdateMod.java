@@ -18,6 +18,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,11 +67,30 @@ public class I18nUpdateMod {
             List<ResourcePack> languagePacks = new ArrayList<>();
             boolean convertNotNeed = assets.downloads.size() == 1 && assets.downloads.get(0).targetVersion.equals(minecraftVersion);
             String applyFileName = assets.downloads.get(0).fileName;
-            for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
-                FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
-                ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
-                languagePack.checkUpdate(it.fileUrl, it.md5Url);
-                languagePacks.add(languagePack);
+            ExecutorService executor = Executors.newFixedThreadPool(assets.downloads.size());
+            try {
+                List<Future<?>> futures = new ArrayList<>();
+                for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
+                    futures.add(executor.submit(() -> {
+                        FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
+                        ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
+                        try {
+                            languagePack.checkUpdate(it.fileUrl, it.md5Url);
+                        } catch (Exception e) {
+                            Log.debug(String.format("Error while checking update for resource pack: %s", e));
+                        }
+                        languagePacks.add(languagePack);
+                    }));
+                }
+                for (Future<?> future : futures) {
+                    try {
+                        future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        Log.debug(String.format("Error while updating resource pack: %s", e));
+                    }
+                }
+            } finally {
+                executor.shutdown();
             }
 
             //Convert resourcepack
