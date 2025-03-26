@@ -14,10 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static i18nupdatemod.I18nUpdateMod.GSON;
 
@@ -31,6 +28,14 @@ public class ModLauncherService implements ITransformationService {
     @Override
     public void initialize(IEnvironment environment) {
         Optional<Path> minecraftPath = environment.getProperty(IEnvironment.Keys.GAMEDIR.get());
+        // 没法拿到i18n后面加载的模组
+        List<Map<String,String>> tmp = environment.getProperty(IEnvironment.Keys.MODLIST.get()).orElse(null);
+        List<String> modList = new ArrayList<>();
+        if (tmp != null) {
+            for (Map<String, String> map : tmp) {
+                modList.add(map.get("name"));
+            }
+        }
         if (!minecraftPath.isPresent()) {
             Log.warning("Minecraft path not found");
             return;
@@ -41,7 +46,7 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge");
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", modList);
     }
 
     @Override
