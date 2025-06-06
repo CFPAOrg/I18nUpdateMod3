@@ -9,6 +9,8 @@ import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,11 +29,16 @@ public class I18nUpdateMod {
 
     public static final Gson GSON = new Gson();
 
-    public static void init(Path minecraftPath, String minecraftVersion, String loader) {
+    public static void init(Path minecraftPath, String minecraftVersion, String loader,@NotNull List<String> modList) {
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
+        }
+        if(modList.isEmpty()){
+            Log.debug("modList: " + modList);
+        }else{
+            Log.debug("modList is null");
         }
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
