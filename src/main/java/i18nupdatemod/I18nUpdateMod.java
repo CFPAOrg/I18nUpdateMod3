@@ -36,10 +36,10 @@ public class I18nUpdateMod {
             Log.warning("Error getting version: " + e);
         }
 
-        Log.debug("modList from loader:" + modDomainsSet);
+        //Log.debug("modList from loader:" + modDomainsSet);
         if ("Forge".equals(loader)) {
             modDomainsSet = getModDomainsFromModsFolder(minecraftPath, minecraftVersion, loader);
-            Log.debug("modList from mods folder: " + modDomainsSet);
+            //Log.debug("modList from mods folder: " + modDomainsSet);
 
         }
         modDomainsSet.remove("i18nupdatemod");
