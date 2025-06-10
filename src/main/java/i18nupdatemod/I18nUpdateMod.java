@@ -30,6 +30,7 @@ public class I18nUpdateMod {
     public static final Gson GSON = new Gson();
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull HashSet<String> modDomainsSet) {
+        long startTime = System.nanoTime();
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
@@ -94,6 +95,8 @@ public class I18nUpdateMod {
             config.addResourcePack("Minecraft-Mod-Language-Modpack",
                     (minecraftMajorVersion <= 12 ? "" : "file/") + applyFileName);
             config.writeToFile();
+            long endTime = System.nanoTime();
+            Log.info(String.format("I18nUpdateMod finished in %.2f ms", (endTime - startTime) / 1000000.0));
         } catch (Exception e) {
             Log.warning(String.format("Failed to update resource pack: %s", e));
 //            e.printStackTrace();

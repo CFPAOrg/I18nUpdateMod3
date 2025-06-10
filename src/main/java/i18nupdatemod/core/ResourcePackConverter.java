@@ -38,6 +38,7 @@ public class ResourcePackConverter {
                 Files.newOutputStream(tmpFilePath),
                 StandardCharsets.UTF_8)) {
 //            zos.setMethod(ZipOutputStream.STORED);
+            resourcePackLoop:
             for (Path p : sourcePath) {
                 Log.info("Converting: " + p);
                 try (ZipFile zf = new ZipFile(p.toFile(), StandardCharsets.UTF_8)) {
@@ -45,6 +46,11 @@ public class ResourcePackConverter {
                         ZipEntry ze = e.nextElement();
                         String name = ze.getName();
                         if (name.split("/").length >= 2 && !modDomainsSet.contains(name.split("/")[1])) {
+                            modDomainsSet.remove(name.split("/")[1]);
+                            if (name.isEmpty()) {
+                                Log.debug(modDomainsSet.toString());
+                                break resourcePackLoop;
+                            }
                             continue;
                         }
                         //Log.debug(name);
@@ -71,6 +77,7 @@ public class ResourcePackConverter {
                 }
             }
             zos.close();
+            Log.debug("unsolved mod domains" + modDomainsSet.toString());
             Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
             FileUtil.syncTmpFile(tmpFilePath, filePath, true);
         } catch (Exception e) {
