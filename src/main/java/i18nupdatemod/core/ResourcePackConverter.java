@@ -34,9 +34,7 @@ public class ResourcePackConverter {
 
     public void convert(int packFormat, String description, HashSet<String> modDomainsSet) throws Exception {
         Set<String> fileList = new HashSet<>();
-        try (ZipOutputStream zos = new ZipOutputStream(
-                Files.newOutputStream(tmpFilePath),
-                StandardCharsets.UTF_8)) {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath), StandardCharsets.UTF_8)) {
 //            zos.setMethod(ZipOutputStream.STORED);
             resourcePackLoop:
             for (Path p : sourcePath) {
@@ -45,8 +43,9 @@ public class ResourcePackConverter {
                     for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
                         ZipEntry ze = e.nextElement();
                         String name = ze.getName();
-                        if (name.split("/").length >= 2 && !modDomainsSet.contains(name.split("/")[1])) {
-                            modDomainsSet.remove(name.split("/")[1]);
+                        String[] parts = name.split("/");
+                        if (parts.length >= 2 && !modDomainsSet.contains(parts[1])) {
+                            modDomainsSet.remove(parts[1]);
                             if (name.isEmpty()) {
                                 Log.debug(modDomainsSet.toString());
                                 break resourcePackLoop;

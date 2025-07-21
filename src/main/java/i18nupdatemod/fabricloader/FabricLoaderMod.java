@@ -56,6 +56,7 @@ public class FabricLoaderMod implements ClientModInitializer {
                     .get("INSTANCE")
                     .get("modMap").get();
             modList = new HashSet<>(instance.keySet());
+            return modList;
         } catch (Exception ignored) {
 
         }
@@ -65,6 +66,7 @@ public class FabricLoaderMod implements ClientModInitializer {
                     .get("INSTANCE")
                     .get("modMap").get();
             modList = new HashSet<>(instance.keySet());
+            return modList;
         } catch (Exception ignored) {
 
         }
