@@ -11,10 +11,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -35,8 +32,8 @@ public class ResourcePackConverter {
     public void convert(int packFormat, String description, HashSet<String> modDomainsSet) throws Exception {
         Set<String> fileList = new HashSet<>();
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath), StandardCharsets.UTF_8)) {
+            Set<String> loadedModDomains = new HashSet<>();
 //            zos.setMethod(ZipOutputStream.STORED);
-            resourcePackLoop:
             for (Path p : sourcePath) {
                 Log.info("Converting: " + p);
                 try (ZipFile zf = new ZipFile(p.toFile(), StandardCharsets.UTF_8)) {
@@ -44,12 +41,8 @@ public class ResourcePackConverter {
                         ZipEntry ze = e.nextElement();
                         String name = ze.getName();
                         String[] parts = name.split("/");
+                        // 正在筛选的是assets/modDomain/** && 当前的modDomain不需要
                         if (parts.length >= 2 && !modDomainsSet.contains(parts[1])) {
-                            modDomainsSet.remove(parts[1]);
-                            if (name.isEmpty()) {
-                                Log.debug(modDomainsSet.toString());
-                                break resourcePackLoop;
-                            }
                             continue;
                         }
                         //Log.debug(name);
@@ -59,7 +52,7 @@ public class ResourcePackConverter {
                             continue;
                         }
                         fileList.add(name);
-//                        Log.debug(name);
+                        loadedModDomains.add(parts[1]);
 
                         // Put file into new zip
                         zos.putNextEntry(new ZipEntry(name));
@@ -73,6 +66,10 @@ public class ResourcePackConverter {
                         }
                         zos.closeEntry();
                     }
+                }
+                modDomainsSet.removeAll(loadedModDomains);
+                if (modDomainsSet.isEmpty()){
+                    break;
                 }
             }
             zos.close();
