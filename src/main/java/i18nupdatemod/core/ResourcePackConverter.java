@@ -32,7 +32,6 @@ public class ResourcePackConverter {
     public void convert(int packFormat, String description, HashSet<String> modDomainsSet) throws Exception {
         Set<String> fileList = new HashSet<>();
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath), StandardCharsets.UTF_8)) {
-            Set<String> loadedModDomains = new HashSet<>();
 //            zos.setMethod(ZipOutputStream.STORED);
             for (Path p : sourcePath) {
                 Log.info("Converting: " + p);
@@ -52,7 +51,6 @@ public class ResourcePackConverter {
                             continue;
                         }
                         fileList.add(name);
-                        loadedModDomains.add(parts[1]);
 
                         // Put file into new zip
                         zos.putNextEntry(new ZipEntry(name));
@@ -67,7 +65,6 @@ public class ResourcePackConverter {
                         zos.closeEntry();
                     }
                 }
-                modDomainsSet.removeAll(loadedModDomains);
                 if (modDomainsSet.isEmpty()){
                     break;
                 }
