@@ -28,7 +28,6 @@ public class I18nConfig {
     private static final String CFPA_ASSET_ROOT = "http://downloader1.meitangdehulu.com:22943/";
     private static final Gson GSON = new Gson();
     private static I18nMetaData i18nMetaData;
-    private static final Map<String, String> serverGitIndex = new HashMap<>();
 
     static {
         init();
@@ -43,24 +42,6 @@ public class I18nConfig {
             }
         } catch (Exception e) {
             Log.warning("Error getting index: " + e);
-        }
-        // Update with i18nMetaData.json and GitHub Packer
-        String[][] mappings = {
-                {"Minecraft-Mod-Language-Modpack.zip", "Minecraft-Mod-Language-Package-1.12.2.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-16.zip", "Minecraft-Mod-Language-Package-1.16.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-16-Fabric.zip", "Minecraft-Mod-Language-Package-1.16-fabric.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-18.zip", "Minecraft-Mod-Language-Package-1.18.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-18-Fabric.zip", "Minecraft-Mod-Language-Package-1.18-fabric.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-19.zip", "Minecraft-Mod-Language-Package-1.19.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-19-Fabric.zip", "Minecraft-Mod-Language-Package-1.19-fabric.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-20.zip", "Minecraft-Mod-Language-Package-1.20.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-20-Fabric.zip", "Minecraft-Mod-Language-Package-1.20-fabric.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-21.zip", "Minecraft-Mod-Language-Package-1.21.zip"},
-                {"Minecraft-Mod-Language-Modpack-1-21-Fabric.zip", "Minecraft-Mod-Language-Package-1.21-fabric.zip"}
-        };
-
-        for (String[] mapping : mappings) {
-            serverGitIndex.put(mapping[0], mapping[1]);
         }
     }
 
@@ -131,7 +112,7 @@ public class I18nConfig {
             return convert.convertFrom.stream().map(it -> getAssetMetaData(it, loader)).map(it -> {
                 GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
                 adi.fileName = it.filename;
-                adi.fileUrl = asset_root + serverGitIndex.get(it.filename);
+                adi.fileUrl = asset_root + it.filename;
                 adi.md5Url = asset_root + it.md5Filename;
                 adi.targetVersion = it.targetVersion;
                 return adi;

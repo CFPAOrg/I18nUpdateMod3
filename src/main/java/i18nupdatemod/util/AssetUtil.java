@@ -110,7 +110,7 @@ public class AssetUtil {
     @NotNull
     public static Map<String,String> getGitIndex(){
         try{
-            URL index_url = new URL("https://raw.githubusercontent.com/CFPAOrg/Minecraft-Mod-Language-Package/refs/heads/main/version-index.json");
+            URL index_url = new URL("https://raw.githubusercontent.com/CFPAOrg/Minecraft-Mod-Language-Package/refs/heads/index/version-index.json");
             HttpURLConnection httpConn = (HttpURLConnection) index_url.openConnection();
             httpConn.setRequestMethod("GET");
             httpConn.setConnectTimeout(5000);
