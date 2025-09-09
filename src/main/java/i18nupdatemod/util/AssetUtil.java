@@ -33,7 +33,7 @@ public class AssetUtil {
         // MIRRORS.add("http://localhost:8080/");
         MIRRORS.add("https://raw.githubusercontent.com/");
         // 此镜像源维护者：502y
-        MIRRORS.add("http://203.135.99.76:30002/");
+        MIRRORS.add("http://8.137.167.65:64684/");
     }
 
     public static void download(String url, Path localFile) throws IOException, URISyntaxException {
