@@ -37,7 +37,7 @@ public class FileUtil {
         return temporaryDirPath.resolve(filename);
     }
 
-    public static void syncTmpFile(Path filePath, Path tmpFilePath, boolean saveToGame) throws IOException {
+    public static void syncTmpFile(Path filePath, Path tmpFilePath) throws IOException {
         //Both temp and current file not found
         if (!Files.exists(filePath) && !Files.exists(tmpFilePath)) {
             Log.debug("Both temp and current file not found");
@@ -59,7 +59,7 @@ public class FileUtil {
             to = filePath;
         }
 
-        if (!saveToGame && to == filePath) {
+        if (to == filePath) {
             //Don't save to game
             return;
         }

@@ -11,7 +11,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -69,7 +72,7 @@ public class ResourcePackConverter {
             zos.close();
             //Log.debug("unsolved mod domains" + modDomainsSet.toString());
             Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
-            FileUtil.syncTmpFile(tmpFilePath, filePath, true);
+            FileUtil.syncTmpFile(tmpFilePath, filePath);
         } catch (Exception e) {
             throw new Exception(String.format("Error converting %s to %s: %s", sourcePath, tmpFilePath, e));
         }

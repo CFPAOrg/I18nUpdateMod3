@@ -73,22 +73,18 @@ public class I18nUpdateMod {
 
             //Update resource pack
             List<ResourcePack> languagePacks = new ArrayList<>();
-            boolean convertNotNeed = assets.downloads.size() == 1 && assets.downloads.get(0).targetVersion.equals(minecraftVersion);
-            String applyFileName = assets.downloads.get(0).fileName;
             for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
-                ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
+                ResourcePack languagePack = new ResourcePack(it.fileName);
                 languagePack.checkUpdate(it.fileUrl, it.md5Url);
                 languagePacks.add(languagePack);
             }
 
             //Convert resourcepack
-            if (!convertNotNeed) {
-                FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
-                applyFileName = assets.covertFileName;
-                ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
-                converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads), modDomainsSet);
-            }
+            FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
+            String applyFileName = assets.covertFileName;
+            ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
+            converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads), modDomainsSet);
 
             //Apply resource pack
             GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));

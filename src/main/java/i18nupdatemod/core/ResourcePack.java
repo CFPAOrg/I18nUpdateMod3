@@ -22,17 +22,15 @@ public class ResourcePack {
     private final String filename;
     private final Path filePath;
     private final Path tmpFilePath;
-    private final boolean saveToGame;
     private String remoteMd5;
 
-    public ResourcePack(String filename, boolean saveToGame) {
+    public ResourcePack(String filename) {
         //If target version is not current version, not save
-        this.saveToGame = saveToGame;
         this.filename = filename;
         this.filePath = FileUtil.getResourcePackPath(filename);
         this.tmpFilePath = FileUtil.getTemporaryPath(filename);
         try {
-            FileUtil.syncTmpFile(filePath, tmpFilePath, saveToGame);
+            FileUtil.syncTmpFile(filePath, tmpFilePath);
         } catch (Exception e) {
             Log.warning(
                     String.format("Error while sync temp file %s <-> %s: %s", filePath, tmpFilePath, e));
@@ -89,7 +87,7 @@ public class ResourcePack {
         if (!Files.exists(tmpFilePath)) {
             throw new FileNotFoundException("Tmp file not found.");
         }
-        FileUtil.syncTmpFile(filePath, tmpFilePath, saveToGame);
+        FileUtil.syncTmpFile(filePath, tmpFilePath);
     }
 
     public Path getTmpFilePath() {
