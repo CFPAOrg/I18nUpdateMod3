@@ -65,12 +65,9 @@ public class ResourcePackConverter {
                         zos.closeEntry();
                     }
                 }
-                if (modDomainsSet.isEmpty()){
-                    break;
-                }
             }
             zos.close();
-            Log.debug("unsolved mod domains" + modDomainsSet.toString());
+            //Log.debug("unsolved mod domains" + modDomainsSet.toString());
             Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
             FileUtil.syncTmpFile(tmpFilePath, filePath, true);
         } catch (Exception e) {
