@@ -11,15 +11,16 @@ import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -138,27 +139,57 @@ public class I18nUpdateMod {
         String[] modsNamesList = modsPath.toFile().list((dir, name) -> name.endsWith(".jar"));
         if (modsNamesList != null) {
             for (String name : modsNamesList) {
-                modDomainSet.addAll(getModDomainFromAsset(modsPath.resolve(name).toFile()));
+                modDomainSet.addAll(getModDomainFromJar(modsPath.resolve(name).toFile()));
             }
         }
         return modDomainSet;
     }
 
-    private static HashSet<String> getModDomainFromAsset(File modsPath) {
+    private static HashSet<String> getModDomainFromJar(File modPath) {
+        Log.debug(String.format("Get mod domain from %s", modPath));
         HashSet<String> modList = new HashSet<>();
-        try (JarFile jarFile = new JarFile(modsPath)) {
-            Enumeration<JarEntry> entries = jarFile.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                String path = entry.getName();
-                // 匹配 assets/xxx/
-                if (path.startsWith("assets/") && path.split("/").length >= 2) {
-                    modList.add(path.split("/")[1]);
-                }
-            }
-        } catch (Exception ignored) {
+        try (FileInputStream fis = new FileInputStream(modPath)) {
+            modList.addAll(getModDomainFromStream(fis, modPath.getName()));
+        } catch (Exception e) {
+            Log.warning(String.format("Failed to read jar %s: %s", modPath, e));
         }
         return modList;
     }
+
+    private static HashSet<String> getModDomainFromStream(InputStream input, String sourceName) throws IOException {
+        HashSet<String> modList = new HashSet<>();
+        try (JarInputStream jis = new JarInputStream(input)) {
+            JarEntry entry;
+            byte[] buffer = new byte[8192];
+            while ((entry = jis.getNextJarEntry()) != null) {
+                String path = entry.getName();
+
+                // 匹配 assets/<domain>/
+                if (path.startsWith("assets/")) {
+                    String[] parts = path.split("/");
+                    if (parts.length >= 2) {
+                        modList.add(parts[1]);
+                    }
+                } else if (path.endsWith(".jar")) {
+                    try {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        int bytesRead;
+                        while ((bytesRead = jis.read(buffer)) != -1) {
+                            baos.write(buffer, 0, bytesRead);
+                        }
+
+                        byte[] innerJarBytes = baos.toByteArray();
+                        try (ByteArrayInputStream innerStream = new ByteArrayInputStream(innerJarBytes)) {
+                            modList.addAll(getModDomainFromStream(innerStream, path));
+                        }
+                    } catch (Exception innerEx) {
+                        Log.warning(String.format("Failed to parse nested jar %s inside %s: %s", path, sourceName, innerEx));
+                    }
+                }
+            }
+        }
+        return modList;
+    }
+
 
 }
