@@ -25,7 +25,7 @@ public class I18nConfig {
     /**
      * <a href="https://github.com/CFPAOrg/Minecraft-Mod-Language-Package">CFPAOrg/Minecraft-Mod-Language-Package</a>
      */
-    private static final String CFPA_assetRoot = "http://downloader1.meitangdehulu.com:22943/";
+    private static final String CFPA_ASSET_ROOT  = "http://downloader1.meitangdehulu.com:22943/";
     private static final Gson GSON = new Gson();
     private static I18nMetaData i18nMetaData;
 
@@ -118,7 +118,7 @@ public class I18nConfig {
                 return adi;
             }).collect(Collectors.toList());
         } catch (Exception ignore) {
-            return createDownloadDetails(convert, loader, CFPA_assetRoot);
+            return createDownloadDetails(convert, loader, CFPA_ASSET_ROOT );
         }
     }
 }
