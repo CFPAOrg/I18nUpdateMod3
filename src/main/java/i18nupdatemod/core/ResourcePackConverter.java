@@ -47,7 +47,7 @@ public class ResourcePackConverter {
                         if (parts.length >= 2 && !modDomainsSet.contains(parts[1])) {
                             continue;
                         }
-                        //Log.debug(name);
+
                         // Don't put same file
                         if (fileList.contains(name)) {
 //                            Log.debug(name + ": DUPLICATE");
