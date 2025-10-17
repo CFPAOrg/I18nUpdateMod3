@@ -28,7 +28,6 @@ public class AssetUtil {
     static {
         // 镜像地址可以改成服务器下发
         MIRRORS = new ArrayList<>();
-        // MIRRORS.add("http://localhost:8080/");
         MIRRORS.add("https://raw.githubusercontent.com/");
         // 此镜像源维护者：502y
         MIRRORS.add("http://8.137.167.65:64684/");
