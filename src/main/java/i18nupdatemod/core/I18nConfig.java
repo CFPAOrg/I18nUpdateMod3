@@ -11,9 +11,6 @@ import i18nupdatemod.util.VersionRange;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,7 +22,7 @@ public class I18nConfig {
     /**
      * <a href="https://github.com/CFPAOrg/Minecraft-Mod-Language-Package">CFPAOrg/Minecraft-Mod-Language-Package</a>
      */
-    private static final String CFPA_ASSET_ROOT  = "http://downloader1.meitangdehulu.com:22943/";
+    private static final String CFPA_ASSET_ROOT = "http://downloader1.meitangdehulu.com:22943/";
     private static final Gson GSON = new Gson();
     private static I18nMetaData i18nMetaData;
 
@@ -68,7 +65,7 @@ public class I18nConfig {
         String assetRoot = getFastestUrl();
         Log.debug("Using asset root: " + assetRoot);
 
-        if (assetRoot.contains("github")) {
+        if (assetRoot.equals("https://raw.githubusercontent.com/")) {
             ret.downloads = createDownloadDetailsFromGit(convert, loader);
         } else {
             ret.downloads = createDownloadDetails(convert, loader, assetRoot);
@@ -97,9 +94,9 @@ public class I18nConfig {
             String releaseTag;
             String version = convert.convertFrom.get(0);
 
-            if(loader.toLowerCase().contains("fabric")){
+            if (loader.toLowerCase().contains("fabric")) {
                 releaseTag = index.get(version + "-fabric");
-            }else{
+            } else {
                 releaseTag = index.get(version);
             }
             if (releaseTag == null) {
@@ -118,7 +115,7 @@ public class I18nConfig {
                 return adi;
             }).collect(Collectors.toList());
         } catch (Exception ignore) {
-            return createDownloadDetails(convert, loader, CFPA_ASSET_ROOT );
+            return createDownloadDetails(convert, loader, CFPA_ASSET_ROOT);
         }
     }
 }

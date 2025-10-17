@@ -6,9 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
@@ -108,8 +106,8 @@ public class AssetUtil {
     }
 
     @NotNull
-    public static Map<String,String> getGitIndex(){
-        try{
+    public static Map<String, String> getGitIndex() {
+        try {
             URL index_url = new URL("https://raw.githubusercontent.com/CFPAOrg/Minecraft-Mod-Language-Package/refs/heads/index/version-index.json");
             HttpURLConnection httpConn = (HttpURLConnection) index_url.openConnection();
             httpConn.setRequestMethod("GET");
@@ -117,7 +115,8 @@ public class AssetUtil {
             httpConn.setReadTimeout(5000);
 
             try (InputStreamReader reader = new InputStreamReader(httpConn.getInputStream())) {
-                Type mapType = new TypeToken<Map<String, String>>(){}.getType();
+                Type mapType = new TypeToken<Map<String, String>>() {
+                }.getType();
                 return new Gson().fromJson(reader, mapType);
             } finally {
                 httpConn.disconnect();
