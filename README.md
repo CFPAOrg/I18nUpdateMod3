@@ -21,7 +21,7 @@
 
 ## 支持的版本
 
-- Minecraft：1.6.1~1.21.5 都支持
+- Minecraft：1.6.1~1.21.10 都支持
 - Mod加载器：MinecraftForge、NeoForge、Fabric、Quilt 都支持
 - Java：8~21 都支持
 
