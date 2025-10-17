@@ -25,7 +25,7 @@ public class I18nConfig {
     /**
      * <a href="https://github.com/CFPAOrg/Minecraft-Mod-Language-Package">CFPAOrg/Minecraft-Mod-Language-Package</a>
      */
-    private static final String CFPA_ASSET_ROOT = "http://downloader1.meitangdehulu.com:22943/";
+    private static final String CFPA_assetRoot = "http://downloader1.meitangdehulu.com:22943/";
     private static final Gson GSON = new Gson();
     private static I18nMetaData i18nMetaData;
 
@@ -65,13 +65,13 @@ public class I18nConfig {
         GameMetaData convert = getGameMetaData(minecraftVersion);
         GameAssetDetail ret = new GameAssetDetail();
 
-        String asset_root = getFastestUrl();
-        Log.debug("Using asset root: " + asset_root);
+        String assetRoot = getFastestUrl();
+        Log.debug("Using asset root: " + assetRoot);
 
-        if (asset_root.contains("github")) {
+        if (assetRoot.contains("github")) {
             ret.downloads = createDownloadDetailsFromGit(convert, loader);
         } else {
-            ret.downloads = createDownloadDetails(convert, loader, asset_root);
+            ret.downloads = createDownloadDetails(convert, loader, assetRoot);
         }
 
         ret.covertPackFormat = convert.packFormat;
@@ -80,12 +80,12 @@ public class I18nConfig {
         return ret;
     }
 
-    private static List<GameAssetDetail.AssetDownloadDetail> createDownloadDetails(GameMetaData convert, String loader, String asset_root) {
+    private static List<GameAssetDetail.AssetDownloadDetail> createDownloadDetails(GameMetaData convert, String loader, String assetRoot) {
         return convert.convertFrom.stream().map(it -> getAssetMetaData(it, loader)).map(it -> {
             GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
             adi.fileName = it.filename;
-            adi.fileUrl = asset_root + it.filename;
-            adi.md5Url = asset_root + it.md5Filename;
+            adi.fileUrl = assetRoot + it.filename;
+            adi.md5Url = assetRoot + it.md5Filename;
             adi.targetVersion = it.targetVersion;
             return adi;
         }).collect(Collectors.toList());
@@ -107,18 +107,18 @@ public class I18nConfig {
                 Log.debug(index.toString());
                 throw new Exception();
             }
-            String asset_root = "https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/" + releaseTag + "/";
+            String assetRoot = "https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/" + releaseTag + "/";
 
             return convert.convertFrom.stream().map(it -> getAssetMetaData(it, loader)).map(it -> {
                 GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
                 adi.fileName = it.filename;
-                adi.fileUrl = asset_root + it.filename;
-                adi.md5Url = asset_root + it.md5Filename;
+                adi.fileUrl = assetRoot + it.filename;
+                adi.md5Url = assetRoot + it.md5Filename;
                 adi.targetVersion = it.targetVersion;
                 return adi;
             }).collect(Collectors.toList());
         } catch (Exception ignore) {
-            return createDownloadDetails(convert, loader, CFPA_ASSET_ROOT);
+            return createDownloadDetails(convert, loader, CFPA_assetRoot);
         }
     }
 }
