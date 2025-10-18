@@ -8,6 +8,7 @@ import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.IncompatibleEnvironmentException;
 import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.Log;
+import i18nupdatemod.util.ModUtil;
 import i18nupdatemod.util.Reflection;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +39,7 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", new HashSet<>());
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge",  ModUtil.getModDomainsFromModsFolder(minecraftPath.get(), minecraftVersion, "Forge"));
     }
 
     @Override
