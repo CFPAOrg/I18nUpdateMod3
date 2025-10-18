@@ -7,6 +7,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Map;
 
 //1.14-latest
 public class FabricLoaderMod implements ClientModInitializer {
@@ -20,7 +22,7 @@ public class FabricLoaderMod implements ClientModInitializer {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(gameDir, mcVersion, "Fabric");
+        I18nUpdateMod.init(gameDir, mcVersion, "Fabric", getMods());
     }
 
     private String getMcVersion() {
@@ -43,5 +45,31 @@ public class FabricLoaderMod implements ClientModInitializer {
 
         }
         return null;
+    }
+
+
+    private HashSet<String> getMods() {
+        HashSet<String> modList = new HashSet<>();
+        try {
+            // Fabric
+            @SuppressWarnings("unchecked") final Map<String, Object> instance = (Map<String, Object>) Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
+                    .get("INSTANCE")
+                    .get("modMap").get();
+            modList = new HashSet<>(instance.keySet());
+            return modList;
+        } catch (Exception ignored) {
+
+        }
+        try {
+            // Quilt
+            @SuppressWarnings("unchecked") final Map<String, Object> instance = (Map<String, Object>) Reflection.clazz("org.quiltmc.loader.impl.QuiltLoaderImpl")
+                    .get("INSTANCE")
+                    .get("modMap").get();
+            modList = new HashSet<>(instance.keySet());
+            return modList;
+        } catch (Exception ignored) {
+
+        }
+        return modList;
     }
 }
