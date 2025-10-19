@@ -2,6 +2,7 @@ package i18nupdatemod.launchwrapper;
 
 import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.Log;
+import i18nupdatemod.util.ModUtil;
 import i18nupdatemod.util.Reflection;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.LaunchClassLoader;
@@ -20,7 +21,7 @@ public class LaunchWrapperTweaker implements ITweaker {
             Log.warning("Failed to get minecraft version.");
             return;
         }
-        I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge");
+        I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge", ModUtil.getModDomainsFromModsFolder(gameDir.toPath(), mcVersion, "Forge"));
     }
 
     @Override

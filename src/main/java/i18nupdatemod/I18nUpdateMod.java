@@ -9,13 +9,14 @@ import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -27,12 +28,16 @@ public class I18nUpdateMod {
 
     public static final Gson GSON = new Gson();
 
-    public static void init(Path minecraftPath, String minecraftVersion, String loader) {
+    public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull HashSet<String> modDomainsSet) {
+        long startTime = System.nanoTime();
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
         }
+
+        modDomainsSet.remove("i18nupdatemod");
+
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
         String localStorage = getLocalStoragePos(minecraftPath);
@@ -61,28 +66,26 @@ public class I18nUpdateMod {
 
             //Update resource pack
             List<ResourcePack> languagePacks = new ArrayList<>();
-            boolean convertNotNeed = assets.downloads.size() == 1 && assets.downloads.get(0).targetVersion.equals(minecraftVersion);
-            String applyFileName = assets.downloads.get(0).fileName;
             for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
-                ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
+                ResourcePack languagePack = new ResourcePack(it.fileName);
                 languagePack.checkUpdate(it.fileUrl, it.md5Url);
                 languagePacks.add(languagePack);
             }
 
             //Convert resourcepack
-            if (!convertNotNeed) {
-                FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
-                applyFileName = assets.covertFileName;
-                ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
-                converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads));
-            }
+            FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
+            String applyFileName = assets.covertFileName;
+            ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
+            converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads), modDomainsSet);
 
             //Apply resource pack
             GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));
             config.addResourcePack("Minecraft-Mod-Language-Modpack",
                     (minecraftMajorVersion <= 12 ? "" : "file/") + applyFileName);
             config.writeToFile();
+            long endTime = System.nanoTime();
+            Log.info(String.format("I18nUpdateMod finished in %.2f ms", (endTime - startTime) / 1000000.0));
         } catch (Exception e) {
             Log.warning(String.format("Failed to update resource pack: %s", e));
 //            e.printStackTrace();
@@ -121,4 +124,5 @@ public class I18nUpdateMod {
                 Objects::nonNull
         ).findFirst().orElse(xdgDataHome);
     }
+
 }

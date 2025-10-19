@@ -32,11 +32,9 @@ public class ResourcePackConverter {
         this.tmpFilePath = FileUtil.getTemporaryPath(filename);
     }
 
-    public void convert(int packFormat, String description) throws Exception {
+    public void convert(int packFormat, String description, HashSet<String> modDomainsSet) throws Exception {
         Set<String> fileList = new HashSet<>();
-        try (ZipOutputStream zos = new ZipOutputStream(
-                Files.newOutputStream(tmpFilePath),
-                StandardCharsets.UTF_8)) {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tmpFilePath), StandardCharsets.UTF_8)) {
 //            zos.setMethod(ZipOutputStream.STORED);
             for (Path p : sourcePath) {
                 Log.info("Converting: " + p);
@@ -44,13 +42,18 @@ public class ResourcePackConverter {
                     for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
                         ZipEntry ze = e.nextElement();
                         String name = ze.getName();
+                        String[] parts = name.split("/");
+                        // 正在筛选的是assets/modDomain/** && 当前的modDomain不需要
+                        if (parts.length >= 2 && !modDomainsSet.contains(parts[1])) {
+                            continue;
+                        }
+
                         // Don't put same file
                         if (fileList.contains(name)) {
 //                            Log.debug(name + ": DUPLICATE");
                             continue;
                         }
                         fileList.add(name);
-//                        Log.debug(name);
 
                         // Put file into new zip
                         zos.putNextEntry(new ZipEntry(name));
@@ -67,8 +70,9 @@ public class ResourcePackConverter {
                 }
             }
             zos.close();
+            //Log.debug("unsolved mod domains" + modDomainsSet.toString());
             Log.info("Converted: %s -> %s", sourcePath, tmpFilePath);
-            FileUtil.syncTmpFile(tmpFilePath, filePath, true);
+            FileUtil.syncTmpFile(tmpFilePath, filePath);
         } catch (Exception e) {
             throw new Exception(String.format("Error converting %s to %s: %s", sourcePath, tmpFilePath, e));
         }
