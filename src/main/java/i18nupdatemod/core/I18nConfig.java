@@ -78,44 +78,37 @@ public class I18nConfig {
     }
 
     private static List<GameAssetDetail.AssetDownloadDetail> createDownloadDetails(GameMetaData convert, String loader, String assetRoot) {
-        return convert.convertFrom.stream().map(it -> getAssetMetaData(it, loader)).map(it -> {
-            GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
-            adi.fileName = it.filename;
-            adi.fileUrl = assetRoot + it.filename;
-            adi.md5Url = assetRoot + it.md5Filename;
-            adi.targetVersion = it.targetVersion;
-            return adi;
-        }).collect(Collectors.toList());
+        return convert.convertFrom.stream().map(it->getDownloadDetailsOnce(it,loader,assetRoot)).collect(Collectors.toList());
     }
-
+    private static GameAssetDetail.AssetDownloadDetail getDownloadDetailsOnce(String convertFrom, String loader,String assetRoot){
+        AssetMetaData metaData = getAssetMetaData(convertFrom,loader);
+        GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
+        adi.fileName = metaData.filename;
+        adi.fileUrl = assetRoot + metaData.filename;
+        adi.md5Url = assetRoot + metaData.md5Filename;
+        adi.targetVersion = metaData.targetVersion;
+        return adi;
+    }
     private static List<GameAssetDetail.AssetDownloadDetail> createDownloadDetailsFromGit(GameMetaData convert, String loader) {
-        try {
             Map<String, String> index = getGitIndex();
-            String releaseTag;
-            String version = convert.convertFrom.get(0);
-
-            if (loader.toLowerCase().contains("fabric")) {
-                releaseTag = index.get(version + "-fabric");
-            } else {
-                releaseTag = index.get(version);
+            return convert.convertFrom.stream().map( version -> {
+                String releaseTag = null;
+                String assetRoot = null;
+                if (loader.toLowerCase().contains("fabric")) {
+                    releaseTag = index.get(version + "-fabric");
+                } else {
+                    releaseTag = index.get(version);
+                }
+                if (releaseTag == null) {
+                    Log.debug("Error getting index: " + version + "-" + loader);
+                    Log.debug(index.toString());
+                    assetRoot = CFPA_ASSET_ROOT;
+                } else {
+                    assetRoot = "https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/" + releaseTag + "/";
+                }
+                return getDownloadDetailsOnce(version,loader,assetRoot);
             }
-            if (releaseTag == null) {
-                Log.debug("Error getting index: " + version + "-" + loader);
-                Log.debug(index.toString());
-                throw new Exception();
-            }
-            String assetRoot = "https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/" + releaseTag + "/";
+            ).collect(Collectors.toList());
 
-            return convert.convertFrom.stream().map(it -> getAssetMetaData(it, loader)).map(it -> {
-                GameAssetDetail.AssetDownloadDetail adi = new GameAssetDetail.AssetDownloadDetail();
-                adi.fileName = it.filename;
-                adi.fileUrl = assetRoot + it.filename;
-                adi.md5Url = assetRoot + it.md5Filename;
-                adi.targetVersion = it.targetVersion;
-                return adi;
-            }).collect(Collectors.toList());
-        } catch (Exception ignore) {
-            return createDownloadDetails(convert, loader, CFPA_ASSET_ROOT);
-        }
     }
 }
