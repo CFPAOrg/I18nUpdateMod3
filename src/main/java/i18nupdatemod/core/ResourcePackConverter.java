@@ -77,6 +77,13 @@ public class ResourcePackConverter {
     private byte[] convertPackMeta(InputStream is, int packFormat, String description) {
         PackMeta meta = GSON.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), PackMeta.class);
         meta.pack.pack_format = packFormat;
+        if (packFormat > 64) {
+            meta.pack.min_format = packFormat;
+            meta.pack.max_format = packFormat;
+        } else {
+            meta.pack.min_format = null;
+            meta.pack.max_format = null;
+        }
         meta.pack.description = description;
         return GSON.toJson(meta).getBytes(StandardCharsets.UTF_8);
     }
@@ -86,7 +93,10 @@ public class ResourcePackConverter {
 
         private static class Pack {
             int pack_format;
+            Integer min_format;
+            Integer max_format;
             String description;
         }
     }
 }
+
