@@ -1,10 +1,7 @@
 package i18nupdatemod.core;
 
 import com.google.gson.Gson;
-import i18nupdatemod.entity.AssetMetaData;
-import i18nupdatemod.entity.GameAssetDetail;
-import i18nupdatemod.entity.GameMetaData;
-import i18nupdatemod.entity.I18nMetaData;
+import i18nupdatemod.entity.*;
 import i18nupdatemod.util.Log;
 import i18nupdatemod.util.Version;
 import i18nupdatemod.util.VersionRange;
@@ -62,8 +59,10 @@ public class I18nConfig {
         GameMetaData convert = getGameMetaData(minecraftVersion);
         GameAssetDetail ret = new GameAssetDetail();
 
+        LoadDetailUI.appendLog("正在获取最快的镜像源...");
         String assetRoot = getFastestUrl();
         Log.debug("Using asset root: " + assetRoot);
+        LoadDetailUI.appendLog("即将从 " + assetRoot + " 下载资源包");
 
         if (assetRoot.equals("https://raw.githubusercontent.com/")) {
             ret.downloads = createDownloadDetailsFromGit(convert, loader);

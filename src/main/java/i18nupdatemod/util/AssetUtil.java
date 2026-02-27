@@ -2,18 +2,23 @@ package i18nupdatemod.util;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.apache.commons.io.FileUtils;
+import i18nupdatemod.I18nUpdateMod;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,8 +40,36 @@ public class AssetUtil {
 
     public static void download(String url, Path localFile) throws IOException, URISyntaxException {
         Log.info("Downloading: %s -> %s", url, localFile);
-        FileUtils.copyURLToFile(new URI(url).toURL(), localFile.toFile(),
-                (int) TimeUnit.SECONDS.toMillis(3), (int) TimeUnit.SECONDS.toMillis(33));
+
+        HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(3));
+        connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(1));
+
+        try (InputStream input = connection.getInputStream();
+             OutputStream output = Files.newOutputStream(localFile)) {
+            byte[] buffer = new byte[8192];
+            while (true) {
+                if (I18nUpdateMod.shouldShutdown) {
+                    throw new InterruptedIOException("Download cancelled by user");
+                }
+
+                int read;
+                try {
+                    read = input.read(buffer);
+                } catch (SocketTimeoutException e) {
+                    continue;
+                }
+
+                if (read < 0) {
+                    break;
+                }
+                output.write(buffer, 0, read);
+            }
+        } finally {
+            connection.disconnect();
+        }
+
         Log.debug("Downloaded: %s -> %s", url, localFile);
     }
 

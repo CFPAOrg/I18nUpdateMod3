@@ -1,5 +1,6 @@
 package i18nupdatemod.core;
 
+import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.AssetUtil;
 import i18nupdatemod.util.DigestUtil;
 import i18nupdatemod.util.FileUtil;
@@ -7,6 +8,7 @@ import i18nupdatemod.util.Log;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,11 +43,14 @@ public class ResourcePack {
 
     public void checkUpdate(String fileUrl, String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
         if (isUpToDate(md5Url)) {
+            LoadDetailUI.appendLog(filename + " 无需更新");
             Log.debug("Already up to date.");
             return;
         }
         //In this time, we can only download full file
+        LoadDetailUI.appendLog("正在下载 " + filename);
         downloadFull(fileUrl, md5Url);
+        LoadDetailUI.appendLog(filename + " 下载完成");
         //In the future, we will download patch file and merge local file
     }
 
@@ -75,17 +80,29 @@ public class ResourcePack {
     }
 
     private void downloadFull(String fileUrl, String md5Url) throws IOException {
+        if (I18nUpdateMod.shouldShutdown) {
+            throw new InterruptedIOException("Download cancelled by user");
+        }
+
+        Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
         try {
-            Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
             AssetUtil.download(fileUrl, downloadTmp);
             if (!checkMd5(downloadTmp, md5Url)) {
                 throw new IOException("Download MD5 not match");
             }
             Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
             Log.debug(String.format("Updates temp file: %s", tmpFilePath));
+        } catch (InterruptedIOException e) {
+            Files.deleteIfExists(downloadTmp);
+            throw e;
         } catch (Exception e) {
             Log.warning("Error while downloading: %s", e);
         }
+
+        if (I18nUpdateMod.shouldShutdown) {
+            throw new InterruptedIOException("Download cancelled by user");
+        }
+
         if (!Files.exists(tmpFilePath)) {
             throw new FileNotFoundException("Tmp file not found.");
         }

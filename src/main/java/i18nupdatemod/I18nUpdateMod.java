@@ -7,6 +7,8 @@ import i18nupdatemod.core.I18nConfig;
 import i18nupdatemod.core.ResourcePack;
 import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.entity.GameAssetDetail;
+import i18nupdatemod.core.LoadDetailUI;
+import i18nupdatemod.entity.LoadStage;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
 
@@ -24,11 +26,17 @@ import java.util.stream.Stream;
 public class I18nUpdateMod {
     public static final String MOD_ID = "i18nupdatemod";
     public static String MOD_VERSION;
-
+    public static volatile boolean shouldShutdown = false;
     public static final Gson GSON = new Gson();
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader) {
+        LoadDetailUI.show();
+        LoadDetailUI.setStage(LoadStage.INIT);
+
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
+            if (is == null) {
+                throw new IllegalStateException("/i18nMetaData.json not found");
+            }
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
@@ -47,6 +55,11 @@ public class I18nUpdateMod {
             Log.warning("I18nUpdateMod会从互联网获取内容不可控的资源包。");
             Log.warning("这一行为违背了网易我的世界「开发者内容审核制度」：禁止上传与提审内容不一致的游戏内容。");
             Log.warning("为了遵循这一制度，I18nUpdateMod不会下载任何内容。");
+
+            LoadDetailUI.appendLog("I18nUpdateMod会从互联网获取内容不可控的资源包。");
+            LoadDetailUI.appendLog("这一行为违背了网易我的世界「开发者内容审核制度」：禁止上传与提审内容不一致的游戏内容。");
+            LoadDetailUI.appendLog("为了遵循这一制度，I18nUpdateMod不会下载任何内容。");
+            LoadDetailUI.appendLog("请您手动关闭此窗口");
             return;
         } catch (ClassNotFoundException ignored) {
         }
@@ -57,13 +70,23 @@ public class I18nUpdateMod {
 
         try {
             //Get asset
+            if (shouldShutdown) {
+                return;
+            }
             GameAssetDetail assets = I18nConfig.getAssetDetail(minecraftVersion, loader);
 
             //Update resource pack
+            LoadDetailUI.setStage(LoadStage.DOWNLOAD_ASSET);
+            if (shouldShutdown) {
+                return;
+            }
             List<ResourcePack> languagePacks = new ArrayList<>();
             boolean convertNotNeed = assets.downloads.size() == 1 && assets.downloads.get(0).targetVersion.equals(minecraftVersion);
             String applyFileName = assets.downloads.get(0).fileName;
             for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
+                if (shouldShutdown) {
+                    return;
+                }
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
                 ResourcePack languagePack = new ResourcePack(it.fileName, convertNotNeed);
                 languagePack.checkUpdate(it.fileUrl, it.md5Url);
@@ -71,22 +94,37 @@ public class I18nUpdateMod {
             }
 
             //Convert resourcepack
+            LoadDetailUI.setStage(LoadStage.CONVERT_RESOURCE_PACK);
+            if (shouldShutdown) {
+                return;
+            }
             if (!convertNotNeed) {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
                 applyFileName = assets.covertFileName;
                 ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
                 converter.convert(assets.covertPackFormat, getResourcePackDescription(assets.downloads));
             }
+            LoadDetailUI.appendLog("资源包已转换完成。");
 
             //Apply resource pack
+            LoadDetailUI.setStage(LoadStage.APPLY_RESOURCE_PACK);
+            if (shouldShutdown) {
+                return;
+            }
             GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));
             config.addResourcePack("Minecraft-Mod-Language-Modpack",
                     (minecraftMajorVersion <= 12 ? "" : "file/") + applyFileName);
             config.writeToFile();
+            LoadDetailUI.appendLog("资源包已应用。");
+            LoadDetailUI.setStage(LoadStage.FINISH);
         } catch (Exception e) {
             Log.warning(String.format("Failed to update resource pack: %s", e));
+            LoadDetailUI.appendLog(String.format("I18n Update Mod 运行失败: %s", e));
+            LoadDetailUI.autoClose(6000);
+            return;
 //            e.printStackTrace();
         }
+        LoadDetailUI.hide();
     }
 
     private static String getResourcePackDescription(List<GameAssetDetail.AssetDownloadDetail> downloads) {

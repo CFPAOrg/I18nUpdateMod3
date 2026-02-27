@@ -63,7 +63,12 @@ tasks.test {
 }
 
 tasks.processResources {
-    filesMatching("**") {
+    filesMatching("**/*.json") {
+        expand(
+            "version" to project.version,
+        )
+    }
+    filesMatching("**/*.mod.json") {
         expand(
             "version" to project.version,
         )

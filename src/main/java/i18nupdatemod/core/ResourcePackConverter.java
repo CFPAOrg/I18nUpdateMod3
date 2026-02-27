@@ -40,6 +40,7 @@ public class ResourcePackConverter {
 //            zos.setMethod(ZipOutputStream.STORED);
             for (Path p : sourcePath) {
                 Log.info("Converting: " + p);
+                LoadDetailUI.appendLog("正在转换 " + p);
                 try (ZipFile zf = new ZipFile(p.toFile(), StandardCharsets.UTF_8)) {
                     for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements(); ) {
                         ZipEntry ze = e.nextElement();
