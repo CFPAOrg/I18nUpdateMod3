@@ -39,11 +39,18 @@ repositories {
     maven("https://libraries.minecraft.net/")
     maven("https://maven.fabricmc.net/")
     maven("https://files.minecraftforge.net/maven")
+    maven("https://maven.neoforged.net/releases")
     maven("https://repo.runelite.net/")
 }
 
 configurations.configureEach {
     isTransitive = false
+}
+
+configurations.compileClasspath {
+    attributes {
+        attribute(org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+    }
 }
 
 dependencies {
@@ -55,6 +62,8 @@ dependencies {
     implementation("net.fabricmc:fabric-loader:0.15.9")
     implementation("cpw.mods:modlauncher:8.1.3")
     implementation("net.minecraft:launchwrapper:1.12")
+    compileOnly("net.neoforged.fancymodloader:loader:10.0.36")
+    compileOnly("net.neoforged:mergetool:2.0.0:api")
 
     implementation("commons-io:commons-io:2.16.1")
     implementation("org.ow2.asm:asm:9.7")

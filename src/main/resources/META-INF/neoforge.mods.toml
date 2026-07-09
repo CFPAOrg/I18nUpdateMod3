@@ -1,0 +1,15 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "AGPL-3.0-only"
+issueTrackerURL = "https://github.com/xfl03/I18nUpdateMod3/issues"
+
+[[mods]]
+modId = "i18nupdatemod"
+version = "${version}"
+displayName = "I18nUpdateMod"
+displayURL = "https://github.com/xfl03/I18nUpdateMod3"
+issueTrackerURL = "https://github.com/xfl03/I18nUpdateMod3/issues"
+authors = "xfl03"
+description = '''
+Brand new Minecraft Mod Language Package update mod.
+'''
