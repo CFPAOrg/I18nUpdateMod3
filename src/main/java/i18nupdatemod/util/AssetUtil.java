@@ -27,6 +27,12 @@ public class AssetUtil {
     private static final String CFPA_ASSET_ROOT = "http://downloader1.meitangdehulu.com:22943/";
     private static final int CONNECT_TIMEOUT_MS = (int) TimeUnit.SECONDS.toMillis(5);
     private static final int READ_TIMEOUT_MS = (int) TimeUnit.SECONDS.toMillis(15);
+    /**
+     * Probes run on the launch thread, so they keep the original tight budget: a slow mirror
+     * must delay startup as little as possible.
+     */
+    private static final int PROBE_CONNECT_TIMEOUT_MS = (int) TimeUnit.SECONDS.toMillis(3);
+    private static final int PROBE_READ_TIMEOUT_MS = (int) TimeUnit.SECONDS.toMillis(5);
     private static final List<String> MIRRORS;
 
     static {
@@ -132,8 +138,8 @@ public class AssetUtil {
     private static String testUrlConnection(String url) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         conn.setRequestMethod("HEAD");
-        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        conn.setReadTimeout(READ_TIMEOUT_MS);
+        conn.setConnectTimeout(PROBE_CONNECT_TIMEOUT_MS);
+        conn.setReadTimeout(PROBE_READ_TIMEOUT_MS);
         conn.connect();
         int code = conn.getResponseCode();
         if (code >= 200 && code < 300) {

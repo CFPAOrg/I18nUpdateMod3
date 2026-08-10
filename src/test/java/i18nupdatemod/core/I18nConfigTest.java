@@ -95,14 +95,18 @@ class I18nConfigTest {
                 Collections.singletonMap("1.21-fabric", "release-fabric")));
     }
 
+    /**
+     * The fastest mirror must stay first: the GitHub release is only a last resort, since most users
+     * of this mod reach the mirrors much more reliably than they reach GitHub.
+     */
     @Test
-    void prefersTheReleaseThenFallsBackToMirrors() {
+    void triesTheFastestMirrorBeforeTheGithubRelease() {
         List<GameAssetDetail.AssetDownloadDetail.DownloadSource> sources = I18nConfig.createDownloadSources(
                 "http://8.137.167.65:64684/", "Snapshot-2026010508081767600531");
 
+        assertEquals("http://8.137.167.65:64684/", sources.get(0).fileUrl);
         assertEquals("https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/"
-                + "Snapshot-2026010508081767600531/", sources.get(0).fileUrl);
-        assertEquals("http://8.137.167.65:64684/", sources.get(1).fileUrl);
+                + "Snapshot-2026010508081767600531/", sources.get(sources.size() - 1).fileUrl);
         // Every configured source stays available as a fallback.
         assertTrue(sources.stream().anyMatch(
                 it -> it.fileUrl.equals("http://downloader1.meitangdehulu.com:22943/")));

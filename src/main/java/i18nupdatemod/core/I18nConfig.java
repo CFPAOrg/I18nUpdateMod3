@@ -98,16 +98,20 @@ public class I18nConfig {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Orders the roots to try, fastest first. The GitHub release only acts as a fallback: most users
+     * of this mod reach the mirrors far more reliably than they reach GitHub.
+     */
     static List<GameAssetDetail.AssetDownloadDetail.DownloadSource> createDownloadSources(String preferredRoot,
                                                                                              String releaseTag) {
         LinkedHashSet<String> roots = new LinkedHashSet<>();
-        if (releaseTag != null && !releaseTag.isEmpty()) {
-            roots.add(GITHUB_RELEASE_ROOT + releaseTag + "/");
-        }
         if (preferredRoot != null && !preferredRoot.isEmpty()) {
             roots.add(preferredRoot);
         }
         roots.addAll(getAssetRoots());
+        if (releaseTag != null && !releaseTag.isEmpty()) {
+            roots.add(GITHUB_RELEASE_ROOT + releaseTag + "/");
+        }
 
         List<GameAssetDetail.AssetDownloadDetail.DownloadSource> sources = new ArrayList<>();
         for (String root : roots) {
