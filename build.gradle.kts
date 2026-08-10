@@ -84,6 +84,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Optional: point at a Maven-layout net/neoforged/fancymodloader/loader directory to check the
+    // reflective FMLLoader lookups against real jars. Those tests skip when it is not set.
+    (findProperty("fml.loader.libs") as String? ?: System.getenv("FML_LOADER_LIBS"))?.let {
+        systemProperty("fml.loader.libs", it)
+    }
 }
 
 tasks.processResources {

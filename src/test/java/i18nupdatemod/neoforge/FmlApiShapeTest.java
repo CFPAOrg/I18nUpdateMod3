@@ -21,13 +21,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * jar), so nothing else catches a renamed method. Skipped when the jars are not present.
  */
 class FmlApiShapeTest {
-    private static final Path LIB = Paths.get(
-            "/mnt/d/pcl/.minecraft/libraries/net/neoforged/fancymodloader/loader");
+    /**
+     * Maven-layout directory holding {@code <version>/loader-<version>.jar}, e.g. the
+     * {@code net/neoforged/fancymodloader/loader} folder of any launcher's library cache. Set
+     * {@code -Dfml.loader.libs=...} or the {@code FML_LOADER_LIBS} environment variable to run these
+     * checks; without it there is nothing to verify against and both tests skip.
+     */
+    private static final String LIB_PROPERTY = "fml.loader.libs";
+
+    private static Path libraryDir() {
+        String configured = System.getProperty(LIB_PROPERTY, System.getenv("FML_LOADER_LIBS"));
+        return configured == null || configured.isEmpty() ? null : Paths.get(configured);
+    }
 
     @Test
     void fml11ExposesTheInstanceApiTheEntrypointUses() throws Exception {
         Set<String> methods = methodsOf("11.0.15");
-        assumeTrue(!methods.isEmpty(), "FML 11 jar not available");
+        assumeTrue(!methods.isEmpty(), "set -D" + LIB_PROPERTY + " to a library dir containing FML 11");
 
         assertTrue(methods.contains("getCurrent"), methods.toString());
         assertTrue(methods.contains("getGameDir"), methods.toString());
@@ -40,7 +50,7 @@ class FmlApiShapeTest {
     @Test
     void fml4ExposesTheStaticApiTheFallbackUses() throws Exception {
         Set<String> methods = methodsOf("4.0.39");
-        assumeTrue(!methods.isEmpty(), "FML 4 jar not available");
+        assumeTrue(!methods.isEmpty(), "set -D" + LIB_PROPERTY + " to a library dir containing FML 4");
 
         assertTrue(methods.contains("getGamePath"), methods.toString());
         assertTrue(methods.contains("versionInfo"), methods.toString());
@@ -52,7 +62,11 @@ class FmlApiShapeTest {
      * @return declared method names of FMLLoader in the given loader version, empty if absent
      */
     private static Set<String> methodsOf(String version) throws Exception {
-        Path jar = LIB.resolve(version).resolve("loader-" + version + ".jar");
+        Path lib = libraryDir();
+        if (lib == null) {
+            return new HashSet<>();
+        }
+        Path jar = lib.resolve(version).resolve("loader-" + version + ".jar");
         if (!Files.exists(jar)) {
             return new HashSet<>();
         }
