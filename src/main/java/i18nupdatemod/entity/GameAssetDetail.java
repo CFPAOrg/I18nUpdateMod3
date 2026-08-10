@@ -8,8 +8,17 @@ public class GameAssetDetail {
 
     public static class AssetDownloadDetail {
         public String fileName;
-        public String fileUrl;
-        public String md5Url;
         public String targetVersion;
+        public List<DownloadSource> sources;
+
+        public static class DownloadSource {
+            public final String fileUrl;
+            public final String md5Url;
+
+            public DownloadSource(String fileUrl, String md5Url) {
+                this.fileUrl = fileUrl;
+                this.md5Url = md5Url;
+            }
+        }
     }
 }

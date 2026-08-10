@@ -87,7 +87,7 @@ public class I18nUpdateMod {
             for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
                 ResourcePack languagePack = new ResourcePack(it.fileName);
-                languagePack.checkUpdate(it.fileUrl, it.md5Url);
+                languagePack.checkUpdate(it.sources);
                 languagePacks.add(languagePack);
             }
 

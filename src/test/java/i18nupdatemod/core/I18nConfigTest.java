@@ -4,9 +4,12 @@ import i18nupdatemod.entity.GameMetaData;
 import i18nupdatemod.entity.GameAssetDetail;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class I18nConfigTest {
     @Test
@@ -56,5 +59,56 @@ class I18nConfigTest {
 
     private static GameAssetDetail.AssetDownloadDetail firstDownload(String version, String loader) {
         return I18nConfig.getAssetDetail(version, loader).downloads.get(0);
+    }
+
+    @Test
+    void fallsBackToTheAssetRootWhenTheIndexDoesNotList261() {
+        GameMetaData metadata = new GameMetaData();
+        metadata.convertFrom = Collections.singletonList("26.1");
+
+        // The CFPA version index has no 26.1 entry, so there is no release to download from.
+        assertNull(I18nConfig.resolveReleaseTag(metadata, "NeoForge", Collections.emptyMap()));
+        assertNull(I18nConfig.resolveReleaseTag(metadata, "Fabric", Collections.emptyMap()));
+
+        List<GameAssetDetail.AssetDownloadDetail.DownloadSource> sources =
+                I18nConfig.createDownloadSources("http://downloader1.meitangdehulu.com:22943/", null);
+        assertEquals("http://downloader1.meitangdehulu.com:22943/", sources.get(0).fileUrl);
+    }
+
+    @Test
+    void prefersAnIndexReleaseWhenItBecomesAvailable() {
+        GameMetaData metadata = new GameMetaData();
+        metadata.convertFrom = Collections.singletonList("26.1");
+
+        assertEquals("newer-release", I18nConfig.resolveReleaseTag(metadata, "NeoForge",
+                Collections.singletonMap("26.1", "newer-release")));
+    }
+
+    @Test
+    void usesTheIndexForExistingVersions() {
+        GameMetaData metadata = new GameMetaData();
+        metadata.convertFrom = Collections.singletonList("1.21");
+
+        assertEquals("release-forge", I18nConfig.resolveReleaseTag(metadata, "NeoForge",
+                Collections.singletonMap("1.21", "release-forge")));
+        assertEquals("release-fabric", I18nConfig.resolveReleaseTag(metadata, "Fabric",
+                Collections.singletonMap("1.21-fabric", "release-fabric")));
+    }
+
+    /**
+     * The fastest mirror must stay first: the GitHub release is only a last resort, since most users
+     * of this mod reach the mirrors much more reliably than they reach GitHub.
+     */
+    @Test
+    void triesTheFastestMirrorBeforeTheGithubRelease() {
+        List<GameAssetDetail.AssetDownloadDetail.DownloadSource> sources = I18nConfig.createDownloadSources(
+                "http://8.137.167.65:64684/", "Snapshot-2026010508081767600531");
+
+        assertEquals("http://8.137.167.65:64684/", sources.get(0).fileUrl);
+        assertEquals("https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/"
+                + "Snapshot-2026010508081767600531/", sources.get(sources.size() - 1).fileUrl);
+        // Every configured source stays available as a fallback.
+        assertTrue(sources.stream().anyMatch(
+                it -> it.fileUrl.equals("http://downloader1.meitangdehulu.com:22943/")));
     }
 }
