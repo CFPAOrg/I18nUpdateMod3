@@ -19,7 +19,12 @@ import java.util.*;
 
 import static i18nupdatemod.I18nUpdateMod.GSON;
 
-//1.13-latest
+/**
+ * Forge 1.13+ and NeoForge up to Minecraft 1.21.x.
+ * <p>
+ * FML 11 (Minecraft 26.1) dropped ModLauncher entirely, so on those versions this service is never
+ * loaded and {@link i18nupdatemod.neoforge.NeoForgeMod} takes over.
+ */
 public class ModLauncherService implements ITransformationService {
     @Override
     public @NotNull String name() {
@@ -39,7 +44,9 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge",  ModUtil.getModDomainsFromModsFolder(minecraftPath.get(), minecraftVersion, "Forge"));
+        String loader = isNeoForge() ? "NeoForge" : "Forge";
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, loader,
+                ModUtil.getModDomainsFromModsFolder(minecraftPath.get(), minecraftVersion, loader));
     }
 
     @Override
@@ -82,5 +89,14 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Error getting minecraft version: %s", e);
         }
         return null;
+    }
+
+    private boolean isNeoForge() {
+        try {
+            Class.forName("net.neoforged.fml.loading.FMLLoader");
+            return true;
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        }
     }
 }

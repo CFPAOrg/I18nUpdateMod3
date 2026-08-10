@@ -183,9 +183,32 @@
         "1.20",
         "1.19"
       ]
+    },
+    {
+      "gameVersions": "[26.1,26.1.2]",
+      "minFormat": [84, 0],
+      "maxFormat": [84, 0],
+      "convertFrom": [
+        "26.1",
+        "1.21",
+        "1.20",
+        "1.19"
+      ]
     }
   ],
   "assets": [
+    {
+      "targetVersion": "26.1",
+      "loader": "Forge",
+      "filename": "Minecraft-Mod-Language-Modpack-26-1.zip",
+      "md5Filename": "26.1.md5"
+    },
+    {
+      "targetVersion": "26.1",
+      "loader": "Fabric",
+      "filename": "Minecraft-Mod-Language-Modpack-26-1-Fabric.zip",
+      "md5Filename": "26.1-fabric.md5"
+    },
     {
       "targetVersion": "1.10.2",
       "loader": "Forge",

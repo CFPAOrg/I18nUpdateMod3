@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +30,21 @@ public class I18nUpdateMod {
 
     public static final Gson GSON = new Gson();
 
+    /**
+     * Older NeoForge can reach {@link #init} through both the ModLauncher service and the
+     * {@code @Mod} entrypoint; only the first one should do the work.
+     */
+    private static final AtomicBoolean INITIALIZED = new AtomicBoolean();
+
+    public static boolean isInitialized() {
+        return INITIALIZED.get();
+    }
+
     public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull HashSet<String> modDomainsSet) {
+        if (!INITIALIZED.compareAndSet(false, true)) {
+            Log.debug("Already initialized, skipping duplicate entrypoint");
+            return;
+        }
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
@@ -37,6 +52,11 @@ public class I18nUpdateMod {
         }
 
         modDomainsSet.remove("i18nupdatemod");
+        int minecraftMajorVersion = getMinecraftMajorVersion(minecraftVersion);
+        if (minecraftMajorVersion >= 26) {
+            // The 26.1 pack supplies its CJK font in the vanilla resource domain.
+            modDomainsSet.add("minecraft");
+        }
 
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
@@ -58,8 +78,6 @@ public class I18nUpdateMod {
 
         FileUtil.setResourcePackDirPath(minecraftPath.resolve("resourcepacks"));
 
-        int minecraftMajorVersion = Integer.parseInt(minecraftVersion.split("\\.")[1]);
-
         try {
             //Get asset
             GameAssetDetail assets = I18nConfig.getAssetDetail(minecraftVersion, loader);
@@ -69,7 +87,7 @@ public class I18nUpdateMod {
             for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
                 FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
                 ResourcePack languagePack = new ResourcePack(it.fileName);
-                languagePack.checkUpdate(it.fileUrl, it.md5Url);
+                languagePack.checkUpdate(it.sources);
                 languagePacks.add(languagePack);
             }
 
@@ -98,6 +116,14 @@ public class I18nUpdateMod {
                 String.format("该包对应的官方支持版本为%s\n作者：CFPA团队及汉化项目贡献者",
                         downloads.get(0).targetVersion);
 
+    }
+
+    private static int getMinecraftMajorVersion(String minecraftVersion) {
+        String[] parts = minecraftVersion.split("\\.");
+        if (parts.length >= 2 && "1".equals(parts[0])) {
+            return Integer.parseInt(parts[1]);
+        }
+        return Integer.parseInt(parts[0]);
     }
 
     public static String getLocalStoragePos(Path minecraftPath) {

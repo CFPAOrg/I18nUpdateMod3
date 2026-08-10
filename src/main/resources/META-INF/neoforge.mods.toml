@@ -1,0 +1,12 @@
+modLoader="javafml"
+loaderVersion="[3,]"
+license="AGPL-3.0-only"
+
+[[mods]]
+modId="i18nupdatemod"
+version="${version}"
+displayName="I18nUpdateMod"
+authors="CFPAOrg"
+description='''
+Automatically downloads, updates, converts, and applies the CFPA Chinese language resource pack.
+'''

@@ -1,17 +1,18 @@
 package i18nupdatemod.core;
 
+import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.util.AssetUtil;
 import i18nupdatemod.util.DigestUtil;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ResourcePack {
@@ -22,7 +23,6 @@ public class ResourcePack {
     private final String filename;
     private final Path filePath;
     private final Path tmpFilePath;
-    private String remoteMd5;
 
     public ResourcePack(String filename) {
         //If target version is not current version, not save
@@ -37,44 +37,54 @@ public class ResourcePack {
         }
     }
 
-    public void checkUpdate(String fileUrl, String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
-        if (isUpToDate(md5Url)) {
+    public void checkUpdate(List<GameAssetDetail.AssetDownloadDetail.DownloadSource> sources)
+            throws IOException, URISyntaxException, NoSuchAlgorithmException {
+        if (sources == null || sources.isEmpty()) {
+            throw new IOException("No download sources configured for " + filename);
+        }
+        if (isRecentlyUpdated()) {
             Log.debug("Already up to date.");
             return;
         }
-        //In this time, we can only download full file
-        downloadFull(fileUrl, md5Url);
-        //In the future, we will download patch file and merge local file
+
+        Exception failure = null;
+        for (GameAssetDetail.AssetDownloadDetail.DownloadSource source : sources) {
+            try {
+                if (Files.exists(tmpFilePath) && checkMd5(tmpFilePath, source.md5Url)) {
+                    Log.debug("Already up to date.");
+                    return;
+                }
+                downloadFull(source.fileUrl, source.md5Url);
+                return;
+            } catch (Exception e) {
+                failure = e;
+                Log.warning("Failed resource source %s: %s", source.fileUrl, e);
+            }
+        }
+
+        if (Files.exists(tmpFilePath)) {
+            Log.warning("All resource sources failed; using cached file %s", tmpFilePath);
+            return;
+        }
+        throw new IOException("Failed to download resource pack from all configured sources", failure);
     }
 
-    private boolean isUpToDate(String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
-        //Not exist -> Update
-        if (!Files.exists(tmpFilePath)) {
-            Log.debug("Local file %s not exist.", tmpFilePath);
-            return false;
-        }
-        //Last update time not exceed gap -> Not Update
-        if (Files.getLastModifiedTime(tmpFilePath).to(TimeUnit.MILLISECONDS)
-                > System.currentTimeMillis() - UPDATE_TIME_GAP) {
-            Log.debug("Local file %s has been updated recently.", tmpFilePath);
-            return true;
-        }
-        //Check Update
-        return checkMd5(tmpFilePath, md5Url);
+    private boolean isRecentlyUpdated() throws IOException {
+        return Files.exists(tmpFilePath)
+                && Files.getLastModifiedTime(tmpFilePath).to(TimeUnit.MILLISECONDS)
+                > System.currentTimeMillis() - UPDATE_TIME_GAP;
     }
 
     private boolean checkMd5(Path localFile, String md5Url) throws IOException, URISyntaxException, NoSuchAlgorithmException {
         String localMd5 = DigestUtil.md5Hex(localFile);
-        if (remoteMd5 == null) {
-            remoteMd5 = AssetUtil.getString(md5Url);
-        }
+        String remoteMd5 = AssetUtil.getString(md5Url).trim();
         Log.debug("%s md5: %s, remote md5: %s", localFile, localMd5, remoteMd5);
         return localMd5.equalsIgnoreCase(remoteMd5);
     }
 
     private void downloadFull(String fileUrl, String md5Url) throws IOException {
+        Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
         try {
-            Path downloadTmp = FileUtil.getTemporaryPath(filename + ".tmp");
             AssetUtil.download(fileUrl, downloadTmp);
             if (!checkMd5(downloadTmp, md5Url)) {
                 throw new IOException("Download MD5 not match");
@@ -82,10 +92,11 @@ public class ResourcePack {
             Files.move(downloadTmp, tmpFilePath, StandardCopyOption.REPLACE_EXISTING);
             Log.debug(String.format("Updates temp file: %s", tmpFilePath));
         } catch (Exception e) {
-            Log.warning("Error while downloading: %s", e);
-        }
-        if (!Files.exists(tmpFilePath)) {
-            throw new FileNotFoundException("Tmp file not found.");
+            try {
+                Files.deleteIfExists(downloadTmp);
+            } catch (IOException ignored) {
+            }
+            throw new IOException("Failed to download resource pack from " + fileUrl, e);
         }
         FileUtil.syncTmpFile(filePath, tmpFilePath);
     }

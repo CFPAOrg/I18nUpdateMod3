@@ -5,6 +5,7 @@ import i18nupdatemod.util.Log;
 import i18nupdatemod.util.Reflection;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -27,12 +28,19 @@ public class FabricLoaderMod implements ClientModInitializer {
 
     private String getMcVersion() {
         try {
+            // Public API used by current Fabric Loader versions.
+            return FabricLoader.getInstance().getModContainer("minecraft")
+                    .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                    .orElse(null);
+        } catch (Exception | LinkageError ignored) {
+        }
+        try {
             // Fabric
             return (String) Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
                     .get("INSTANCE")
                     .get("getGameProvider()")
                     .get("getNormalizedGameVersion()").get();
-        } catch (Exception ignored) {
+        } catch (Exception | LinkageError ignored) {
 
         }
         try {
@@ -50,6 +58,14 @@ public class FabricLoaderMod implements ClientModInitializer {
 
     private HashSet<String> getMods() {
         HashSet<String> modList = new HashSet<>();
+        try {
+            // Public API used by current Fabric Loader versions.
+            for (ModContainer mod : FabricLoader.getInstance().getAllMods()) {
+                modList.add(mod.getMetadata().getId());
+            }
+            return modList;
+        } catch (Exception | LinkageError ignored) {
+        }
         try {
             // Fabric
             @SuppressWarnings("unchecked") final Map<String, Object> instance = (Map<String, Object>) Reflection.clazz("net.fabricmc.loader.impl.FabricLoaderImpl")
