@@ -13,6 +13,16 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+sourceSets {
+    named("main") {
+        java {
+            // The NeoForge entrypoint uses a compile-time annotation shim so this
+            // universal jar can still be built without a Java 25 NeoForge API jar.
+            srcDir("src/compat/java")
+        }
+    }
+}
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
@@ -34,6 +44,11 @@ tasks.shadowJar {
     exclude("LICENSE")
 }
 
+tasks.withType<Jar> {
+    // The real API is supplied by NeoForge at runtime.
+    exclude("net/neoforged/**")
+}
+
 repositories {
     mavenCentral()
     maven("https://libraries.minecraft.net/")
@@ -48,7 +63,13 @@ configurations.configureEach {
 
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.3")
+    // This project sets isTransitive = false, so JUnit's own dependencies must be declared by hand.
+    // opentest4j carries TestAbortedException, which assumeTrue() throws.
+    testImplementation("org.junit.platform:junit-platform-commons:1.10.3")
+    testImplementation("org.opentest4j:opentest4j:1.3.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-engine:1.10.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.3")
     implementation("net.runelite.archive-patcher:archive-patcher-applier:1.2")
     compileOnly("org.jetbrains:annotations:24.1.0")
 
@@ -64,6 +85,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Optional: point at a Maven-layout net/neoforged/fancymodloader/loader directory to check the
+    // reflective FMLLoader lookups against real jars. Those tests skip when it is not set.
+    (findProperty("fml.loader.libs") as String? ?: System.getenv("FML_LOADER_LIBS"))?.let {
+        systemProperty("fml.loader.libs", it)
+    }
 }
 
 tasks.processResources {
