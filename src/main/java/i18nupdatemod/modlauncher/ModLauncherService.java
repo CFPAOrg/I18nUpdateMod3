@@ -46,9 +46,7 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
-        String loader = isNeoForge() ? "NeoForge" : "Forge";
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, loader,
-                ModUtil.getModDomainsFromModsFolder(minecraftPath.get(), minecraftVersion, loader));
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge",  ModUtil.getModDomainsFromModsFolder(minecraftPath.get(), minecraftVersion, "Forge"));
     }
 
     @Override
@@ -100,10 +98,6 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Error getting minecraft version: %s", e);
         }
         return null;
-    }
-
-    private boolean isNeoForge() {
-        return loadClass("net.neoforged.fml.loading.FMLLoader") != null;
     }
 
     /**

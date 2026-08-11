@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Forge still boots through ModLauncher on Minecraft 26.1, so this service stays the Forge
- * entrypoint there. Two things changed on that version and are pinned here.
+ * entrypoint there. What changed on that version is pinned here.
  */
 class ModLauncherServiceTest {
     /**
@@ -22,15 +22,6 @@ class ModLauncherServiceTest {
     @Test
     void reportsNoVersionOutsideForgeInsteadOfThrowing() throws Exception {
         assertNull(invoke("getMinecraftVersion"));
-    }
-
-    /**
-     * The loader label picks the Forge or NeoForge pack, so it must not report NeoForge when the
-     * NeoForge FMLLoader is absent.
-     */
-    @Test
-    void doesNotClaimNeoForgeWhenItIsAbsent() throws Exception {
-        assertFalse((Boolean) invoke("isNeoForge"));
     }
 
     /**

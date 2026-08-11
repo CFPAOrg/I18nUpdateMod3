@@ -64,7 +64,6 @@ configurations.configureEach {
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.3")
     // This project sets isTransitive = false, so JUnit's own dependencies must be declared by hand.
-    // opentest4j carries TestAbortedException, which assumeTrue() throws.
     testImplementation("org.junit.platform:junit-platform-commons:1.10.3")
     testImplementation("org.opentest4j:opentest4j:1.3.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
@@ -85,11 +84,6 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    // Optional: point at a Maven-layout net/neoforged/fancymodloader/loader directory to check the
-    // reflective FMLLoader lookups against real jars. Those tests skip when it is not set.
-    (findProperty("fml.loader.libs") as String? ?: System.getenv("FML_LOADER_LIBS"))?.let {
-        systemProperty("fml.loader.libs", it)
-    }
 }
 
 tasks.processResources {

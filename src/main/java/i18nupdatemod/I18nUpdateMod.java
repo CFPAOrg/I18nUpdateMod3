@@ -52,11 +52,6 @@ public class I18nUpdateMod {
         }
 
         modDomainsSet.remove("i18nupdatemod");
-        int minecraftMajorVersion = getMinecraftMajorVersion(minecraftVersion);
-        if (minecraftMajorVersion >= 26) {
-            // The 26.1 pack supplies its CJK font in the vanilla resource domain.
-            modDomainsSet.add("minecraft");
-        }
 
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
@@ -77,6 +72,8 @@ public class I18nUpdateMod {
         }
 
         FileUtil.setResourcePackDirPath(minecraftPath.resolve("resourcepacks"));
+
+        int minecraftMajorVersion = getMinecraftMajorVersion(minecraftVersion);
 
         try {
             //Get asset

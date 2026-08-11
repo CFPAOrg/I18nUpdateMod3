@@ -46,10 +46,8 @@ public class ResourcePackConverter {
                         ZipEntry ze = e.nextElement();
                         String name = ze.getName();
                         String[] parts = name.split("/");
-                        // Keep only installed mod domains under assets/; top-level pack files
-                        // and vanilla assets are retained.
-                        if (parts.length >= 3 && "assets".equals(parts[0])
-                                && !modDomainsSet.contains(parts[1])) {
+                        // 正在筛选的是assets/modDomain/** && 当前的modDomain不需要
+                        if (parts.length >= 2 && !modDomainsSet.contains(parts[1])) {
                             continue;
                         }
 
