@@ -2,6 +2,8 @@ package i18nupdatemod.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 import i18nupdatemod.entity.GameMetaData;
 import i18nupdatemod.util.FileUtil;
 import i18nupdatemod.util.Log;
@@ -80,10 +82,11 @@ public class ResourcePackConverter {
 
     private byte[] convertPackMeta(InputStream is, GameMetaData metaData, String description) {
         PackMeta meta = GSON.fromJson(new InputStreamReader(is, StandardCharsets.UTF_8), PackMeta.class);
-        meta.pack.pack_format = metaData.useNewFormat() ? null : metaData.packFormat;
+        meta.pack.pack_format = metaData.useNewFormat() || metaData.packFormat == null
+                ? null : new JsonPrimitive(metaData.packFormat);
         meta.pack.min_format = metaData.useNewFormat() ? metaData.minFormat : null;
         meta.pack.max_format = metaData.useNewFormat() ? metaData.maxFormat : null;
-        meta.pack.description = description;
+        meta.pack.description = new JsonPrimitive(description);
         return GSON.toJson(meta).getBytes(StandardCharsets.UTF_8);
     }
 
@@ -91,10 +94,10 @@ public class ResourcePackConverter {
         Pack pack;
 
         private static class Pack {
-            Integer pack_format;  // 改为 Integer，支持 null
-            Integer min_format;
-            Integer max_format;
-            String description;
+            JsonElement pack_format;
+            JsonElement min_format;
+            JsonElement max_format;
+            JsonElement description;
         }
     }
 }

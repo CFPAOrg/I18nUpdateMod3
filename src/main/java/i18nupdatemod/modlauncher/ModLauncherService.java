@@ -19,7 +19,14 @@ import java.util.*;
 
 import static i18nupdatemod.I18nUpdateMod.GSON;
 
-//1.13-latest
+/**
+ * Forge 1.13+ (including Minecraft 26.1) and NeoForge up to Minecraft 1.21.x.
+ * <p>
+ * Forge still boots through ModLauncher on 26.1 (bootstrap 2.1.8 + modlauncher 10.2.6), so this
+ * service remains the Forge entrypoint there. NeoForge's FML 11 dropped ModLauncher entirely, so on
+ * NeoForge 26.1+ this service is never loaded and {@link i18nupdatemod.neoforge.NeoForgeMod} takes
+ * over instead.
+ */
 public class ModLauncherService implements ITransformationService {
     @Override
     public @NotNull String name() {
@@ -67,20 +74,43 @@ public class ModLauncherService implements ITransformationService {
                     return args[i + 1];
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             Log.warning("Error getting minecraft version: %s", e);
         }
 
-        // MinecraftForge 1.20.3~
+        // MinecraftForge 1.20.3~, and the only source on Forge 26.1 where --fml.mcversion is gone
         // 1.20.3: https://github.com/MinecraftForge/MinecraftForge/blob/1.20.x/fmlloader/src/main/java/net/minecraftforge/fml/loading/VersionInfo.java
         try {
-            Class<?> clazz = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
+            // Resolved without running static initializers: only the class's resource root is needed,
+            // and initializing it can fail with an Error that would escape into the loader.
+            Class<?> clazz = loadClass("net.minecraftforge.fml.loading.FMLLoader");
+            if (clazz == null) {
+                return null;
+            }
             try (InputStream is = clazz.getResourceAsStream("/forge_version.json")) {
+                if (is == null) {
+                    Log.warning("forge_version.json not found");
+                    return null;
+                }
                 return GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("mc").getAsString();
             }
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             Log.warning("Error getting minecraft version: %s", e);
         }
         return null;
+    }
+
+    /**
+     * @return the class, or null when it is absent or cannot be loaded
+     */
+    private static Class<?> loadClass(String name) {
+        try {
+            return Class.forName(name, false, ModLauncherService.class.getClassLoader());
+        } catch (ClassNotFoundException ignored) {
+            return null;
+        } catch (LinkageError e) {
+            Log.warning("Error loading %s: %s", name, e);
+            return null;
+        }
     }
 }
