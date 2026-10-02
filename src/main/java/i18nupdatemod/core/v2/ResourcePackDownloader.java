@@ -4,19 +4,17 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.entity.ModTranslation;
 import i18nupdatemod.util.DigestUtil;
 import i18nupdatemod.util.Log;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -27,12 +25,11 @@ import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionService;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -40,18 +37,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class ResourcePackDownloader {
     private static final Gson GSON = new Gson();
     private static final long UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(1);
     private static final long ICON_UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(30);
-    private static final int MAX_CONCURRENT_DOWNLOADS = 64;
 
-    public static Manifest loadManifest(String baseUrl, String version) throws IOException {
-        String root = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        String url = root + encode(version) + "/Manifest.json";
-        try (InputStream input = fetch(url)) {
+    public static Manifest loadManifest(ResourcePackHttp source, String version) throws IOException {
+        requireSource(source);
+        String path = encode(version) + "/Manifest.json";
+        try (InputStream input = source.open(path)) {
             return parseManifest(input);
         }
     }
@@ -148,7 +143,8 @@ public class ResourcePackDownloader {
      */
     public static List<Path> download(String version, Map<String, String> namespaces,
                                       List<String> blackList, Path cacheRoot,
-                                      String baseUrl) throws IOException, NoSuchAlgorithmException {
+                                      ResourcePackHttp source) throws IOException, NoSuchAlgorithmException {
+        requireSource(source);
         if (namespaces == null) {
             throw new NullPointerException("namespaces");
         }
@@ -163,14 +159,12 @@ public class ResourcePackDownloader {
             blocked = new ArrayList<>(blocked);
             blocked.removeIf("minecraft"::equals);
         }
-        String root = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         Path modCache = cacheRoot.resolve(version).resolve("mods");
         Files.createDirectories(modCache);
         deleteBlacklisted(modCache, blocked);
 
-        String versionUrl = root + encode(version) + "/";
+        String versionPath = encode(version) + "/";
         List<DownloadRequest> requests = new ArrayList<>();
-        Map<String, ReentrantLock> cacheLocks = new HashMap<>();
         for (Map.Entry<String, String> entry : namespaces.entrySet()) {
             String namespace = entry.getKey();
             String rawNamespace = entry.getValue();
@@ -181,22 +175,16 @@ public class ResourcePackDownloader {
 
             Path cached = modCache.resolve(encode(namespace) + ".zip");
             Path md5File = modCache.resolve(encode(namespace) + ".md5");
-            String cacheKey = cached.toAbsolutePath().normalize().toString().toLowerCase(Locale.ROOT);
-            ReentrantLock cacheLock = cacheLocks.get(cacheKey);
-            if (cacheLock == null) {
-                cacheLock = new ReentrantLock();
-                cacheLocks.put(cacheKey, cacheLock);
-            }
-            String assetUrl = versionUrl + "assets/" + encode(namespace);
+            String assetPath = versionPath + "assets/" + encode(namespace);
             requests.add(new DownloadRequest(
-                    version, namespace, rawNamespace, cached, md5File, assetUrl, cacheLock));
+                    version, namespace, rawNamespace, cached, md5File, assetPath, source));
         }
         if (requests.isEmpty()) {
             return new ArrayList<>();
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(
-                Math.min(MAX_CONCURRENT_DOWNLOADS, requests.size()),
+                Math.min(source.parallelism(), requests.size()),
                 downloadThreadFactory());
         CompletionService<Path> completions = new ExecutorCompletionService<>(executor);
         List<Future<Path>> futures = new ArrayList<>(requests.size());
@@ -208,9 +196,9 @@ public class ResourcePackDownloader {
             executor.shutdown();
 
             for (int completed = 0; completed < requests.size(); completed++) {
-                Path source = completions.take().get();
-                if (source != null) {
-                    sourcePaths.add(source);
+                Path cachedSource = completions.take().get();
+                if (cachedSource != null) {
+                    sourcePaths.add(cachedSource);
                 }
             }
             awaitTermination(executor);
@@ -239,27 +227,9 @@ public class ResourcePackDownloader {
             throws IOException, NoSuchAlgorithmException {
         ensureWorkerNotInterrupted();
         try {
-            request.cacheLock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            InterruptedIOException interrupted = new InterruptedIOException(
-                    "Interrupted while waiting for translation cache");
-            interrupted.initCause(e);
-            throw interrupted;
-        }
-        try {
-            return downloadOneLocked(request);
-        } finally {
-            request.cacheLock.unlock();
-        }
-    }
-
-    private static Path downloadOneLocked(DownloadRequest request)
-            throws IOException, NoSuchAlgorithmException {
-        ensureWorkerNotInterrupted();
-        try {
-            updateMod(request.assetUrl, request.rawNamespace, request.cached, request.md5File);
-        } catch (HttpStatusException e) {
+            updateMod(request.source, request.assetPath, request.rawNamespace,
+                    request.cached, request.md5File);
+        } catch (ResourcePackHttp.HttpStatusException e) {
             if (e.status == 404 || e.status == 410) {
                 // 太多了，没事别看（
                 //Log.debug("No exact translation asset for %s/%s; keeping local cache if present", version, namespace);
@@ -344,23 +314,21 @@ public class ResourcePackDownloader {
         final String rawNamespace;
         final Path cached;
         final Path md5File;
-        final String assetUrl;
-        final ReentrantLock cacheLock;
+        final String assetPath;
+        final ResourcePackHttp source;
 
         DownloadRequest(String version, String namespace, String rawNamespace, Path cached,
-                        Path md5File, String assetUrl, ReentrantLock cacheLock) {
+                        Path md5File, String assetPath, ResourcePackHttp source) {
             this.version = version;
             this.namespace = namespace;
             this.rawNamespace = rawNamespace;
             this.cached = cached;
             this.md5File = md5File;
-            this.assetUrl = assetUrl;
-            this.cacheLock = cacheLock;
+            this.assetPath = assetPath;
+            this.source = source;
         }
     }
-
-
-    public static Path downloadIcon(String baseUrl, String version, Path cacheRoot) {
+    public static Path downloadIcon(ResourcePackHttp source, String version, Path cacheRoot) {
         Path cached = cacheRoot.resolve("shared").resolve("pack.png");
         Path temporary = null;
         try {
@@ -368,10 +336,10 @@ public class ResourcePackDownloader {
                     && Files.getLastModifiedTime(cached).toMillis() > System.currentTimeMillis() - ICON_UPDATE_TIME_GAP) {
                 return cached;
             }
+            requireSource(source);
             Files.createDirectories(cached.getParent());
             temporary = Files.createTempFile(cached.getParent(), "pack-icon-", ".tmp");
-            String root = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-            try (InputStream input = fetch(root + encode(version) + "/pack.png")) {
+            try (InputStream input = source.open(encode(version) + "/pack.png")) {
                 Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING);
             }
             byte[] signature = new byte[]{(byte) 137, 80, 78, 71, 13, 10, 26, 10};
@@ -419,7 +387,7 @@ public class ResourcePackDownloader {
         return mod.namespace;
     }
 
-    private static void updateMod(String assetUrl, String rawNamespace,
+    private static void updateMod(ResourcePackHttp source, String assetPath, String rawNamespace,
                                   Path cached, Path md5File)
             throws IOException, AssetFailure, NoSuchAlgorithmException {
         if (Files.isRegularFile(cached) && Files.isRegularFile(md5File)
@@ -428,9 +396,9 @@ public class ResourcePackDownloader {
             return;
         }
 
-        String remoteMd5 = readRemoteText(assetUrl + ".md5").trim();
+        String remoteMd5 = readRemoteText(source, assetPath + ".md5").trim();
         if (!remoteMd5.matches("[0-9a-fA-F]{32}")) {
-            throw new AssetFailure("Invalid asset MD5: " + assetUrl);
+            throw new AssetFailure("Invalid asset MD5: " + assetPath);
         }
         if (Files.isRegularFile(cached) && Files.isRegularFile(md5File)
                 && remoteMd5.equalsIgnoreCase(
@@ -441,16 +409,16 @@ public class ResourcePackDownloader {
         Path archive = Files.createTempFile(cached.getParent(), "translation-", ".tar.lzma");
         Path decoded = Files.createTempFile(cached.getParent(), "translation-", ".zip.tmp");
         try {
-            downloadRemote(assetUrl + ".tar.lzma", archive);
+            downloadRemote(source, assetPath + ".tar.lzma", archive);
             if (!remoteMd5.equalsIgnoreCase(DigestUtil.md5Hex(archive))) {
-                throw new AssetFailure("Download MD5 not match: " + assetUrl);
+                throw new AssetFailure("Download MD5 not match: " + assetPath);
             }
             try {
                 TranslationArchive.unpack(archive, decoded, rawNamespace);
             } catch (TranslationArchive.LocalIoException e) {
                 throw e;
             } catch (IOException | RuntimeException e) {
-                throw new AssetFailure("Failed to decode translation archive: " + assetUrl, e);
+                throw new AssetFailure("Failed to decode translation archive: " + assetPath, e);
             }
 
             Files.move(decoded, cached, StandardCopyOption.REPLACE_EXISTING);
@@ -460,9 +428,9 @@ public class ResourcePackDownloader {
             Files.deleteIfExists(decoded);
         }
     }
-
-    private static String readRemoteText(String url) throws IOException, AssetFailure {
-        InputStream input = fetchAsset(url);
+    private static String readRemoteText(ResourcePackHttp source, String path)
+            throws IOException, AssetFailure {
+        InputStream input = fetchAsset(source, path);
         try {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             byte[] buffer = new byte[8192];
@@ -471,7 +439,7 @@ public class ResourcePackDownloader {
                 try {
                     count = input.read(buffer);
                 } catch (IOException e) {
-                    throw new AssetFailure("Failed to read " + url, e);
+                    throw new AssetFailure("Failed to read " + path, e);
                 }
                 if (count < 0) {
                     break;
@@ -485,14 +453,14 @@ public class ResourcePackDownloader {
             try {
                 input.close();
             } catch (IOException e) {
-                throw new AssetFailure("Failed to close " + url, e);
+                throw new AssetFailure("Failed to close " + path, e);
             }
         }
     }
 
-    private static void downloadRemote(String url, Path destination)
+    private static void downloadRemote(ResourcePackHttp source, String path, Path destination)
             throws IOException, AssetFailure {
-        InputStream input = fetchAsset(url);
+        InputStream input = fetchAsset(source, path);
         OutputStream output = null;
         IOException localFailure = null;
         AssetFailure assetFailure = null;
@@ -510,7 +478,7 @@ public class ResourcePackDownloader {
                         try {
                             count = input.read(buffer);
                         } catch (IOException e) {
-                            throw new AssetFailure("Failed to read " + url, e);
+                            throw new AssetFailure("Failed to read " + path, e);
                         }
                         if (count < 0) {
                             break;
@@ -538,7 +506,7 @@ public class ResourcePackDownloader {
             try {
                 input.close();
             } catch (IOException e) {
-                AssetFailure closeFailure = new AssetFailure("Failed to close " + url, e);
+                AssetFailure closeFailure = new AssetFailure("Failed to close " + path, e);
                 if (localFailure != null) {
                     localFailure.addSuppressed(closeFailure);
                 } else if (assetFailure != null) {
@@ -559,13 +527,14 @@ public class ResourcePackDownloader {
         }
     }
 
-    private static InputStream fetchAsset(String url) throws IOException, AssetFailure {
+    private static InputStream fetchAsset(ResourcePackHttp source, String path)
+            throws IOException, AssetFailure {
         try {
-            return fetch(url);
-        } catch (HttpStatusException e) {
+            return source.open(path);
+        } catch (ResourcePackHttp.HttpStatusException e) {
             throw e;
         } catch (IOException | RuntimeException e) {
-            throw new AssetFailure("Failed to fetch " + url, e);
+            throw new AssetFailure("Failed to fetch " + path, e);
         }
     }
 
@@ -600,42 +569,12 @@ public class ResourcePackDownloader {
         return URLEncoder.encode(segment, "UTF-8").replace("+", "%20");
     }
 
-    private static InputStream fetch(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setConnectTimeout(3000);
-        connection.setReadTimeout(33000);
-        try {
-            int status = connection.getResponseCode();
-            if (status >= 400 && status <= 599) {
-                throw new HttpStatusException(url, status);
-            }
-            if (status < 200 || status >= 300) {
-                throw new IOException("Unexpected HTTP " + status + ": " + url);
-            }
-            return new FilterInputStream(connection.getInputStream()) {
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        connection.disconnect();
-                    }
-                }
-            };
-        } catch (IOException | RuntimeException e) {
-            connection.disconnect();
-            throw e;
+    private static void requireSource(ResourcePackHttp source) {
+        if (source == null) {
+            throw new NullPointerException("source");
         }
     }
 
-    private static class HttpStatusException extends IOException {
-        final int status;
-
-        HttpStatusException(String url, int status) {
-            super("HTTP " + status + ": " + url);
-            this.status = status;
-        }
-    }
 
     public static class Manifest {
         public List<String> blackList = new ArrayList<>();

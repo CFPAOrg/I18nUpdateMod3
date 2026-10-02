@@ -54,14 +54,18 @@ mapOf(
     "Release" to "http://downloader1.meitangdehulu.com:22943/",
     "Debug" to "https://i18dl.imc.wiki/",
 ).forEach { (variant, baseUrl) ->
+    val bmclBaseUrl = if (variant == "Release") {
+        "https://bmclapi2.bangbang93.com/mirrors/i18n-update-mod/"
+    } else ""
     val configFile = layout.buildDirectory.file("generated/buildConfig/$variant/i18n-build.properties")
     val generateConfig = tasks.register("generate${variant}Config") {
         inputs.property("assetBaseUrl", baseUrl)
+        inputs.property("bmclBaseUrl", bmclBaseUrl)
         outputs.file(configFile)
         doLast {
             configFile.get().asFile.apply {
                 parentFile.mkdirs()
-                writeText("assetBaseUrl=$baseUrl\n")
+                writeText("assetBaseUrl=$baseUrl\nbmclBaseUrl=$bmclBaseUrl\n")
             }
         }
     }
