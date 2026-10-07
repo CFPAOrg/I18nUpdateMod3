@@ -10,4 +10,6 @@ jobs:
     uses: ./.github/workflows/common.yml
     with:
       type: Beta
+      build-task: buildRelease
+      artifact-path: build/libs/I18nUpdateMod-*-all.jar
     secrets: inherit

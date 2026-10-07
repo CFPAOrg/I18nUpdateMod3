@@ -11,7 +11,8 @@
 
 更现代的自动汉化更新模组。
 
-「[简体中文资源包（Minecraft Mod Language Package）](https://github.com/CFPAOrg/Minecraft-Mod-Language-Package)」是由「[CFPAOrg](http://cfpa.team/)」团队维护的「自动汉化资源包」，可以将一些Mod中的文本翻译为中文。  
+「[简体中文资源包（Minecraft Mod Language Package）](https://github.com/CFPAOrg/Minecraft-Mod-Language-Package)
+」是由「[CFPAOrg](http://cfpa.team/)」团队维护的「自动汉化资源包」，可以将一些Mod中的文本翻译为中文。  
 本Mod用于自动下载、更新、应用「简体中文资源包」。
 
 ## 下载
@@ -21,9 +22,9 @@
 
 ## 支持的版本
 
-- Minecraft：1.6.1~1.21.10 都支持
+- Minecraft：1.6.1~1.21.11、26.1~26.1.2 都支持
 - Mod加载器：MinecraftForge、NeoForge、Fabric、Quilt 都支持
-- Java：8~21 都支持
+- Java：8~25 都支持
 
 仅仅需要在mods文件夹中放置本Mod的jar文件即可，Mod本身与各主流Minecraft版本、Mod Loader、Java版本均兼容，Mod本身不需要进行任何版本隔离。
 
@@ -31,13 +32,14 @@
 
 为了尽可能实用，目前本Mod会根据游戏版本自动下载、合并、转换「简体中文资源包」。
 
-- 官方资源：1.10.2、1.12.2、1.16、1.18、1.19、1.20、1.21
+- 官方资源：1.10.2、1.12.2、1.16、1.18、1.19、1.20、1.21、26.1
 - 合并转换：会合并加转换最近版本的一些资源包，尽可能做最大化的支持
 - 特别说明：1.13开始将语言文件变化为json格式，所以不能将1.12.2的资源包用于1.13以上，反之同理
 
 ## 开发环境
 
-请使用Java 8及以上的JDK构建。
+构建需要 JDK 21（用于编译新版 NeoForge 的服务接口）；产物仍使用 Java 8 字节码，旧版游戏的 Java 运行要求不变。
+
 ```shell
 gradle clean shadowJar
 ```

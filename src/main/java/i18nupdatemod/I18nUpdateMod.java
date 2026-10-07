@@ -3,24 +3,19 @@ package i18nupdatemod;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import i18nupdatemod.core.GameConfig;
-import i18nupdatemod.core.I18nConfig;
-import i18nupdatemod.core.ResourcePack;
-import i18nupdatemod.core.ResourcePackConverter;
-import i18nupdatemod.entity.GameAssetDetail;
-import i18nupdatemod.entity.GameMetaData;
-import i18nupdatemod.util.FileUtil;
+import i18nupdatemod.core.ResourcePackUpdater;
+import i18nupdatemod.core.RuntimePackActivation;
+import i18nupdatemod.entity.ModTranslation;
 import i18nupdatemod.util.Log;
+import i18nupdatemod.util.Version;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class I18nUpdateMod {
@@ -29,14 +24,14 @@ public class I18nUpdateMod {
 
     public static final Gson GSON = new Gson();
 
-    public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull HashSet<String> modDomainsSet) {
+    public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull List<ModTranslation> mods) {
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
         } catch (Exception e) {
             Log.warning("Error getting version: " + e);
         }
 
-        modDomainsSet.remove("i18nupdatemod");
+        mods.removeIf(mod -> MOD_ID.equals(mod.namespace));
 
         Log.info(String.format("I18nUpdate Mod %s is loaded in %s with %s", MOD_VERSION, minecraftVersion, loader));
         Log.debug(String.format("Minecraft path: %s", minecraftPath));
@@ -56,34 +51,23 @@ public class I18nUpdateMod {
         } catch (ClassNotFoundException ignored) {
         }
 
-        FileUtil.setResourcePackDirPath(minecraftPath.resolve("resourcepacks"));
-
-        int minecraftMajorVersion = Integer.parseInt(minecraftVersion.split("\\.")[1]);
-
         try {
-            //Get asset
-            GameAssetDetail assets = I18nConfig.getAssetDetail(minecraftVersion, loader);
+            Path resourcePackDirectory = minecraftPath.resolve("resourcepacks");
+            Path cacheRoot = Paths.get(localStorage, "." + MOD_ID);
+            Path convertedPack = ResourcePackUpdater.update(
+                    minecraftVersion, loader, mods, resourcePackDirectory, cacheRoot);
 
-            //Update resource pack
-            List<ResourcePack> languagePacks = new ArrayList<>();
-            for (GameAssetDetail.AssetDownloadDetail it : assets.downloads) {
-                FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, it.targetVersion));
-                ResourcePack languagePack = new ResourcePack(it.fileName);
-                languagePack.checkUpdate(it.fileUrl, it.md5Url);
-                languagePacks.add(languagePack);
+            // NeoForge applies the selection after its resource repository is populated.
+            if (RuntimePackActivation.isEnabled()) {
+                RuntimePackActivation.prepare(minecraftPath, convertedPack);
+                return;
             }
-
-            //Convert resourcepack
-            FileUtil.setTemporaryDirPath(Paths.get(localStorage, "." + MOD_ID, minecraftVersion));
-            String applyFileName = assets.covertFileName;
-            GameMetaData metaData = I18nConfig.getPackFormat(minecraftVersion);
-            ResourcePackConverter converter = new ResourcePackConverter(languagePacks, applyFileName);
-            converter.convert(metaData, getResourcePackDescription(assets.downloads), modDomainsSet);
 
             //Apply resource pack
             GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));
             config.addResourcePack("Minecraft-Mod-Language-Modpack",
-                    (minecraftMajorVersion <= 12 ? "" : "file/") + applyFileName);
+                    (Version.from(minecraftVersion).compareTo(Version.from("1.13")) < 0 ? "" : "file/")
+                            + convertedPack.getFileName().toString());
             config.writeToFile();
         } catch (Exception e) {
             Log.warning(String.format("Failed to update resource pack: %s", e));
@@ -91,14 +75,6 @@ public class I18nUpdateMod {
         }
     }
 
-    private static String getResourcePackDescription(List<GameAssetDetail.AssetDownloadDetail> downloads) {
-        return downloads.size() > 1 ?
-                String.format("该包由%s版本合并\n作者：CFPA团队及汉化项目贡献者",
-                        downloads.stream().map(it -> it.targetVersion).collect(Collectors.joining("和"))) :
-                String.format("该包对应的官方支持版本为%s\n作者：CFPA团队及汉化项目贡献者",
-                        downloads.get(0).targetVersion);
-
-    }
 
     public static String getLocalStoragePos(Path minecraftPath) {
         Path userHome = Paths.get(System.getProperty("user.home"));

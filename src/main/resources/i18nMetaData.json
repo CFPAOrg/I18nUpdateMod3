@@ -5,16 +5,14 @@
       "gameVersions": "[1.6.1,1.8.9]",
       "packFormat": 1,
       "convertFrom": [
-        "1.10.2",
-        "1.12.2"
+        "1.10.2"
       ]
     },
     {
       "gameVersions": "[1.9,1.10.2]",
       "packFormat": 2,
       "convertFrom": [
-        "1.10.2",
-        "1.12.2"
+        "1.10.2"
       ]
     },
     {
@@ -178,10 +176,20 @@
       "gameVersions": "[1.21.9,1.21.11]",
       "minFormat": 69,
       "maxFormat": 75,
-      "convertFrom":[
+      "convertFrom": [
         "1.21",
         "1.20",
         "1.19"
+      ]
+    },
+    {
+      "gameVersions": "[26.1,26.3]",
+      "minFormat": 76,
+      "maxFormat": 97,
+      "convertFrom": [
+        "26.1",
+        "1.21",
+        "1.20"
       ]
     }
   ],
@@ -251,6 +259,18 @@
       "loader": "Fabric",
       "filename": "Minecraft-Mod-Language-Modpack-1-21-Fabric.zip",
       "md5Filename": "1.21-fabric.md5"
+    },
+    {
+      "targetVersion": "26.1",
+      "loader": "Forge",
+      "filename": "Minecraft-Mod-Language-Modpack-26-1.zip",
+      "md5Filename": "26.1.md5"
+    },
+    {
+      "targetVersion": "26.1",
+      "loader": "Fabric",
+      "filename": "Minecraft-Mod-Language-Modpack-26-1-Fabric.zip",
+      "md5Filename": "26.1-fabric.md5"
     }
   ]
 }
