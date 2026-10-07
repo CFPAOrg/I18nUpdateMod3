@@ -1,8 +1,8 @@
 package i18nupdatemod.core.v2;
 
-import org.jetbrains.annotations.NotNull;
 import org.tukaani.xz.LZMAInputStream;
 
+import java.io.BufferedInputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -148,7 +148,7 @@ public final class TranslationArchive {
 
     private static LocalInputStream openInput(Path archive) throws IOException {
         try {
-            return new LocalInputStream(Files.newInputStream(archive.toFile().toPath()));
+            return new LocalInputStream(new BufferedInputStream(Files.newInputStream(archive.toFile().toPath())));
         } catch (IOException e) {
             throw wrapLocal("Cannot open translation archive: " + archive, e);
         }

@@ -99,7 +99,8 @@ public class ModUtil {
                 collectNamespace(parsed.namespaces, path);
 
                 String metadataKind = metadataKind(path);
-                boolean nestedArchive = !entry.isDirectory() && path.toLowerCase().endsWith(".jar");
+                boolean nestedArchive = !entry.isDirectory()
+                        && path.toLowerCase().endsWith(".jar");
                 if (metadataKind != null && !entry.isDirectory()) {
                     boolean rootMetadata = path.indexOf('/') < 0;
                     if (parsed.metadataPath == null
@@ -127,7 +128,7 @@ public class ModUtil {
     }
 
     private static void addTranslations(ParsedMod parsed, List<ModTranslation> output) {
-        MetadataRecord metadata = null;
+        List<MetadataRecord> metadata = Collections.emptyList();
         if (parsed.metadataPath != null) {
             try {
                 metadata = parseMetadata(metadataKind(parsed.metadataPath), parsed.metadataBytes);
@@ -138,37 +139,62 @@ public class ModUtil {
         List<String> namespaces = new ArrayList<>(parsed.namespaces);
         Collections.sort(namespaces);
         for (String namespace : namespaces) {
+            MetadataRecord owner = metadataForNamespace(metadata, namespace);
             output.add(new ModTranslation(
                     namespace,
-                    metadata == null ? null : metadata.author,
-                    metadata == null ? null : metadata.displayName,
+                    owner == null ? null : owner.author,
+                    owner == null ? null : owner.displayName,
                     parsed.source,
                     parsed.nestedJars));
         }
     }
 
-    private static MetadataRecord parseMetadata(String kind, byte[] bytes) {
+    private static List<MetadataRecord> parseMetadata(String kind, byte[] bytes) {
         if ("json".equals(kind)) {
-            return parseJsonMetadata(GSON.fromJson(new String(bytes, StandardCharsets.UTF_8), JsonElement.class));
+            return parseJsonMetadata(GSON.fromJson(
+                    new String(bytes, StandardCharsets.UTF_8), JsonElement.class));
         }
-        return TomlMetadata.parse(bytes);
+        try {
+            return TomlMetadata.parse(bytes);
+        } catch (NoClassDefFoundError e) {
+            if (!isMissingNightConfig(e)) {
+                throw e;
+            }
+            // NightConfig is supplied by Forge/NeoForge, but is intentionally
+            // optional for Fabric and legacy JSON-only scans.
+            Log.warning("NightConfig is unavailable; retaining namespaces without TOML metadata");
+            return Collections.emptyList();
+        }
     }
 
-    private static MetadataRecord parseJsonMetadata(JsonElement element) {
+    private static boolean isMissingNightConfig(NoClassDefFoundError error) {
+        Throwable current = error;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null) {
+                String normalized = message.replace('/', '.');
+                if (normalized.contains("com.electronwill.nightconfig.")) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private static List<MetadataRecord> parseJsonMetadata(JsonElement element) {
+        List<MetadataRecord> records = new ArrayList<>();
         if (element == null || element.isJsonNull()) {
-            return null;
+            return records;
         }
         if (element.isJsonArray()) {
             for (JsonElement child : element.getAsJsonArray()) {
-                MetadataRecord record = parseJsonMetadata(child);
-                if (record != null) {
-                    return record;
-                }
+                records.addAll(parseJsonMetadata(child));
             }
-            return null;
+            return records;
         }
         if (!element.isJsonObject()) {
-            return null;
+            return records;
         }
         JsonObject object = element.getAsJsonObject();
         JsonElement modList = object.get("modList");
@@ -176,14 +202,43 @@ public class ModUtil {
             return parseJsonMetadata(modList);
         }
         MetadataRecord record = new MetadataRecord();
+        record.modId = firstString(object, "modid", "id");
         record.displayName = firstString(object, "displayName", "name");
         record.author = firstAuthor(object, "authors", "authorList");
-        return record;
+        records.add(record);
+        return records;
     }
 
-    private static String firstString(JsonObject object, String first, String second) {
-        String value = stringValue(object.get(first));
-        return value == null ? stringValue(object.get(second)) : value;
+    private static MetadataRecord metadataForNamespace(List<MetadataRecord> records,
+                                                        String namespace) {
+        if (records == null || records.isEmpty()) {
+            return null;
+        }
+        if (records.size() == 1) {
+            return records.get(0);
+        }
+        MetadataRecord owner = null;
+        for (MetadataRecord record : records) {
+            if (record.owns(namespace)) {
+                if (owner != null) {
+                    // Duplicate IDs or namespace aliases are ambiguous; never
+                    // assign a record merely because it appeared first.
+                    return null;
+                }
+                owner = record;
+            }
+        }
+        return owner;
+    }
+
+    private static String firstString(JsonObject object, String... names) {
+        for (String name : names) {
+            String value = stringValue(object.get(name));
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static String firstAuthor(JsonObject object, String first, String second) {
@@ -206,6 +261,8 @@ public class ModUtil {
                 selected = minAuthor(selected, name);
             }
         } else {
+            // A scalar author is already the complete value (for example
+            // Forge's "Alice, Bob"), not a comma-separated author list.
             selected = minAuthor(null, stringValue(value));
         }
         return selected;
@@ -214,16 +271,36 @@ public class ModUtil {
     // Loaded only for TOML metadata. Keep every NightConfig type reference here
     // so old Forge and Fabric can scan JSON without a TOML library present.
     private static final class TomlMetadata {
-        private static MetadataRecord parse(byte[] bytes) {
-            List<UnmodifiableConfig> mods = new TomlParser().parse(new ByteArrayInputStream(bytes)).get("mods");
-            if (mods == null || mods.isEmpty()) {
-                return null;
+        private static List<MetadataRecord> parse(byte[] bytes) {
+            Object rawMods = new TomlParser().parse(new ByteArrayInputStream(bytes)).get("mods");
+            if (!(rawMods instanceof Iterable)) {
+                return Collections.emptyList();
             }
-            Map<String, Object> values = mods.get(0).valueMap();
-            MetadataRecord record = new MetadataRecord();
-            record.displayName = firstValueString(values, "displayName", "name");
-            record.author = authorValue(values.get("authors"));
-            return record;
+            List<MetadataRecord> records = new ArrayList<>();
+            for (Object rawMod : (Iterable<?>) rawMods) {
+                Map<String, Object> values = valuesOf(rawMod);
+                if (values == null) {
+                    continue;
+                }
+                MetadataRecord record = new MetadataRecord();
+                record.modId = firstValueString(values, "modId");
+                record.namespaceAlias = valueString(values.get("namespace"));
+                record.displayName = firstValueString(values, "displayName", "name");
+                record.author = authorValue(values.get("authors"));
+                records.add(record);
+            }
+            return records;
+        }
+
+        @SuppressWarnings("unchecked")
+        private static Map<String, Object> valuesOf(Object rawMod) {
+            if (rawMod instanceof UnmodifiableConfig) {
+                return ((UnmodifiableConfig) rawMod).valueMap();
+            }
+            if (rawMod instanceof Map) {
+                return (Map<String, Object>) rawMod;
+            }
+            return null;
         }
 
         private static String authorValue(Object value) {
@@ -233,11 +310,19 @@ public class ModUtil {
             String selected = null;
             if (value instanceof Iterable) {
                 for (Object author : (Iterable<?>) value) {
-                    String name = author instanceof UnmodifiableConfig
-                            ? valueString(((UnmodifiableConfig) author).get("name")) : valueString(author);
+                    String name;
+                    if (author instanceof UnmodifiableConfig) {
+                        name = valueString(((UnmodifiableConfig) author).get("name"));
+                    } else if (author instanceof Map) {
+                        name = valueString(((Map<?, ?>) author).get("name"));
+                    } else {
+                        name = valueString(author);
+                    }
                     selected = minAuthor(selected, name);
                 }
             } else {
+                // Keep scalar authors intact; only arrays select the
+                // lexicographically smallest author.
                 selected = minAuthor(null, valueString(value));
             }
             return selected;
@@ -264,9 +349,14 @@ public class ModUtil {
         return value instanceof String ? (String) value : null;
     }
 
-    private static String firstValueString(Map<String, Object> values, String first, String second) {
-        String value = valueString(values.get(first));
-        return value == null ? valueString(values.get(second)) : value;
+    private static String firstValueString(Map<String, Object> values, String... names) {
+        for (String name : names) {
+            String value = valueString(values.get(name));
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static String safeArchivePath(String path) {
@@ -360,7 +450,14 @@ public class ModUtil {
     }
 
     private static class MetadataRecord {
+        String modId;
+        String namespaceAlias;
         String author;
         String displayName;
+
+        boolean owns(String namespace) {
+            return namespace != null
+                    && (namespace.equals(modId) || namespace.equals(namespaceAlias));
+        }
     }
 }

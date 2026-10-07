@@ -2,6 +2,7 @@ package i18nupdatemod.core;
 
 import i18nupdatemod.util.Log;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -156,17 +157,17 @@ public final class RuntimePackActivation {
      * <p>For a first registration, the generated pack is moved to the end of
      * the repository's visible selection and the repository is updated.  For
      * a filename migration, only the options list is synchronized with the
-     * repository's existing order.  In both cases persistence is a direct
-     * Options.save() call; invoking updateResourcePacks here would reload
-     * packs recursively while Options is still being constructed.</p>
+     * repository's existing order.  Persistence updates only the
+     * {@code resourcePacks} line in options.txt: NeoForge reloads keybindings
+     * after startup mod loading, so serializing the full Options object here
+     * would erase bindings that have not registered yet.</p>
      */
     public static void afterSelection(Object options,
                                       Object repository,
                                       String selectedPacksMethodName,
                                       String packIdMethodName,
                                       String fixedPositionMethodName,
-                                      String setSelectedMethodName,
-                                      String saveOptionsMethodName) {
+                                      String setSelectedMethodName) {
         SelectionCapture capture;
         synchronized (STATE_LOCK) {
             capture = options == null ? null : CAPTURES.remove(options);
@@ -188,9 +189,9 @@ public final class RuntimePackActivation {
             if (capture.firstRegistration) {
                 activateFirstSelection(capture, options, repository, entries,
                         packIdMethodName, fixedPositionMethodName,
-                        setSelectedMethodName, selectedPacksMethodName, saveOptionsMethodName);
+                        setSelectedMethodName, selectedPacksMethodName);
             } else {
-                activateMigration(capture, options, entries, saveOptionsMethodName);
+                activateMigration(capture, options, entries);
             }
         } catch (Throwable failure) {
             restoreSelection(capture, "runtime selection failed", failure);
@@ -204,8 +205,7 @@ public final class RuntimePackActivation {
                                                String packIdMethodName,
                                                String fixedPositionMethodName,
                                                String setSelectedMethodName,
-                                               String selectedPacksMethodName,
-                                               String saveOptionsMethodName) throws Exception {
+                                               String selectedPacksMethodName) throws Exception {
         PackEntry target = findVisibleTarget(entries, capture.targetId);
         if (target == null) {
             restoreSelection(capture, "generated pack was not selected by the repository");
@@ -240,13 +240,12 @@ public final class RuntimePackActivation {
             return;
         }
         replaceList(selectedList(capture), visibleIds);
-        invokeNoArg(options, saveOptionsMethodName);
+        GameConfig.updateResourcePacks(findOptionsFile(options), visibleIds);
     }
 
     private static void activateMigration(SelectionCapture capture,
                                           Object options,
-                                          List<PackEntry> entries,
-                                          String saveOptionsMethodName) throws Exception {
+                                          List<PackEntry> entries) throws Exception {
         if (findVisibleTarget(entries, capture.targetId) == null) {
             restoreSelection(capture, "generated pack was not selected during filename migration");
             return;
@@ -261,7 +260,75 @@ public final class RuntimePackActivation {
             return;
         }
         replaceList(selectedList(capture), visibleIds);
-        invokeNoArg(options, saveOptionsMethodName);
+        GameConfig.updateResourcePacks(findOptionsFile(options), visibleIds);
+    }
+
+    private static Path findOptionsFile(Object options) throws Exception {
+        if (options == null) {
+            throw new IllegalArgumentException("options is null");
+        }
+        List<Field> fields = new ArrayList<Field>();
+        for (Class<?> type = options.getClass(); type != null; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                fields.add(field);
+            }
+        }
+
+        /* Mapped and obfuscated variants may use different member names.  The
+         * known name is only an ordering hint; the value-type fallback below
+         * keeps this binding independent of Minecraft mappings. */
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())
+                    || !isOptionsPathField(field)
+                    || !"optionsFile".equalsIgnoreCase(field.getName())) {
+                continue;
+            }
+            Path candidate = readOptionsField(options, field, true);
+            if (candidate != null) {
+                return candidate;
+            }
+        }
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())
+                    || !isOptionsPathField(field)) {
+                continue;
+            }
+            Path candidate = readOptionsField(options, field, false);
+            if (candidate != null) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("unable to locate options file");
+    }
+
+    private static boolean isOptionsPathField(Field field) {
+        Class<?> type = field.getType();
+        return File.class.isAssignableFrom(type) || Path.class.isAssignableFrom(type);
+    }
+
+    private static Path optionsPath(Object value, boolean preferred) {
+        Path candidate;
+        if (value instanceof File) {
+            candidate = ((File) value).toPath();
+        } else if (value instanceof Path) {
+            candidate = (Path) value;
+        } else {
+            return null;
+        }
+        Path fileName = candidate.getFileName();
+        if (preferred || (fileName != null && "options.txt".equalsIgnoreCase(fileName.toString()))) {
+            return candidate;
+        }
+        return null;
+    }
+
+    private static Path readOptionsField(Object options, Field field, boolean preferred) {
+        try {
+            makeAccessible(field);
+            return optionsPath(field.get(options), preferred);
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     private static List<PackEntry> readSelectedPacks(Object repository,

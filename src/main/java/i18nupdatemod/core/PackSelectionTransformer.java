@@ -35,7 +35,7 @@ public final class PackSelectionTransformer {
     private static final String BEFORE_NAME = "beforeSelection";
     private static final String BEFORE_DESC = "(Ljava/lang/Object;Ljava/lang/String;)V";
     private static final String AFTER_NAME = "afterSelection";
-    private static final String AFTER_DESC = "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+    private static final String AFTER_DESC = "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
 
     private static final String REPOSITORY_ARGUMENT = "(L" + PACK_REPOSITORY + ";)V";
     private static final String SET_SELECTED_DESC = "(" + COLLECTION + ")V";
@@ -74,9 +74,9 @@ public final class PackSelectionTransformer {
         }
 
         if (changed) {
-            // The largest injected sequence has seven object references on the stack.
+            // The largest injected sequence has six object references on the stack.
             // No locals, branches, or frames are introduced.
-            binding.selectionMethod.maxStack = Math.max(binding.selectionMethod.maxStack, 7);
+            binding.selectionMethod.maxStack = Math.max(binding.selectionMethod.maxStack, 6);
         }
         return changed;
     }
@@ -88,7 +88,6 @@ public final class PackSelectionTransformer {
         String selectedPacksName = null;
         String packIdName = null;
         String fixedPositionName = null;
-        String saveOptionsName = null;
 
         for (MethodNode method : classNode.methods) {
             if (!REPOSITORY_ARGUMENT.equals(method.desc)) {
@@ -108,7 +107,7 @@ public final class PackSelectionTransformer {
             }
 
             RepositorySelectionBinding repositoryBinding =
-                    findRepositorySelectionBinding(method, classNode.name);
+                    findRepositorySelectionBinding(method);
             if (repositoryBinding != null) {
                 if (update != null) {
                     return null;
@@ -117,13 +116,12 @@ public final class PackSelectionTransformer {
                 selectedPacksName = repositoryBinding.selectedPacksName;
                 packIdName = repositoryBinding.packIdName;
                 fixedPositionName = repositoryBinding.fixedPositionName;
-                saveOptionsName = repositoryBinding.saveOptionsName;
             }
         }
 
         if (selection == null || update == null || setSelectedName == null
                 || selectedPacksName == null || packIdName == null
-                || fixedPositionName == null || saveOptionsName == null) {
+                || fixedPositionName == null) {
             return null;
         }
 
@@ -133,7 +131,7 @@ public final class PackSelectionTransformer {
         }
 
         return new Binding(selection, selectedFieldName, selectedPacksName, packIdName,
-                fixedPositionName, setSelectedName, saveOptionsName);
+                fixedPositionName, setSelectedName);
     }
 
     private static String findSetSelectedName(MethodNode method) {
@@ -154,11 +152,10 @@ public final class PackSelectionTransformer {
     }
 
     private static RepositorySelectionBinding findRepositorySelectionBinding(
-            MethodNode method, String optionsOwner) {
+            MethodNode method) {
         String selectedPacksName = null;
         String packIdName = null;
         String fixedPositionName = null;
-        String saveOptionsName = null;
 
         for (AbstractInsnNode instruction = method.instructions.getFirst();
              instruction != null;
@@ -184,12 +181,6 @@ public final class PackSelectionTransformer {
                     // accessor avoids hardcoding either mapped method name.
                     fixedPositionName = invocation.name;
                 }
-                if (optionsOwner.equals(invocation.owner)
-                        && "()V".equals(invocation.desc)
-                        && invocation.getOpcode() != Opcodes.INVOKESTATIC
-                        && saveOptionsName == null) {
-                    saveOptionsName = invocation.name;
-                }
             } else if (instruction instanceof InvokeDynamicInsnNode) {
                 // A compiler is allowed to express Pack::getId or a boolean pack
                 // accessor through a method reference. Keep the same structural
@@ -213,11 +204,11 @@ public final class PackSelectionTransformer {
         }
 
         if (selectedPacksName == null || packIdName == null
-                || fixedPositionName == null || saveOptionsName == null) {
+                || fixedPositionName == null) {
             return null;
         }
         return new RepositorySelectionBinding(selectedPacksName, packIdName,
-                fixedPositionName, saveOptionsName);
+                fixedPositionName);
     }
 
     private static boolean isPackCollectionGetter(String descriptor) {
@@ -306,7 +297,6 @@ public final class PackSelectionTransformer {
         instructions.add(new LdcInsnNode(binding.packIdMethodName));
         instructions.add(new LdcInsnNode(binding.fixedPositionMethodName));
         instructions.add(new LdcInsnNode(binding.setSelectedMethodName));
-        instructions.add(new LdcInsnNode(binding.saveOptionsMethodName));
         instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, CALLBACK_OWNER,
                 AFTER_NAME, AFTER_DESC, false));
         return instructions;
@@ -330,14 +320,12 @@ public final class PackSelectionTransformer {
         private final String selectedPacksName;
         private final String packIdName;
         private final String fixedPositionName;
-        private final String saveOptionsName;
 
         private RepositorySelectionBinding(String selectedPacksName, String packIdName,
-                                           String fixedPositionName, String saveOptionsName) {
+                                           String fixedPositionName) {
             this.selectedPacksName = selectedPacksName;
             this.packIdName = packIdName;
             this.fixedPositionName = fixedPositionName;
-            this.saveOptionsName = saveOptionsName;
         }
     }
 
@@ -348,19 +336,16 @@ public final class PackSelectionTransformer {
         private final String packIdMethodName;
         private final String fixedPositionMethodName;
         private final String setSelectedMethodName;
-        private final String saveOptionsMethodName;
 
         private Binding(MethodNode selectionMethod, String selectedFieldName,
                         String selectedPacksMethodName, String packIdMethodName,
-                        String fixedPositionMethodName, String setSelectedMethodName,
-                        String saveOptionsMethodName) {
+                        String fixedPositionMethodName, String setSelectedMethodName) {
             this.selectionMethod = selectionMethod;
             this.selectedFieldName = selectedFieldName;
             this.selectedPacksMethodName = selectedPacksMethodName;
             this.packIdMethodName = packIdMethodName;
             this.fixedPositionMethodName = fixedPositionMethodName;
             this.setSelectedMethodName = setSelectedMethodName;
-            this.saveOptionsMethodName = saveOptionsMethodName;
         }
     }
 }

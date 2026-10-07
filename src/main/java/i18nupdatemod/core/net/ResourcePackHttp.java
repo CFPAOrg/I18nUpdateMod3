@@ -173,7 +173,9 @@ public final class ResourcePackHttp {
         @Override
         public int read() throws IOException {
             try {
+                ensureNotInterrupted();
                 int value = in.read();
+                ensureNotInterrupted();
                 if (value < 0) exhausted = true;
                 return value;
             } catch (IOException | RuntimeException failure) {
@@ -185,12 +187,20 @@ public final class ResourcePackHttp {
         @Override
         public int read(byte[] buffer, int offset, int length) throws IOException {
             try {
+                ensureNotInterrupted();
                 int count = in.read(buffer, offset, length);
+                ensureNotInterrupted();
                 if (count < 0) exhausted = true;
                 return count;
             } catch (IOException | RuntimeException failure) {
                 connection.disconnect();
                 throw failure;
+            }
+        }
+
+        private static void ensureNotInterrupted() throws InterruptedIOException {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedIOException("Interrupted while reading resource response");
             }
         }
 

@@ -5,6 +5,7 @@ import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.entity.ModTranslation;
+import i18nupdatemod.util.Log;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +43,7 @@ public class ResourcePackV2 {
             } catch (AtomicMoveNotSupportedException e) {
                 Files.move(temporary, convertedOutput, StandardCopyOption.REPLACE_EXISTING);
             }
+            Log.info("Published resource pack: %s", convertedOutput);
             return convertedOutput;
         } finally {
             Files.deleteIfExists(temporary);
