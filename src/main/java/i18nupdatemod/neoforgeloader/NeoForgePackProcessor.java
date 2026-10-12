@@ -65,7 +65,9 @@ public final class NeoForgePackProcessor implements ClassProcessor {
         if (node == null || !TRANSFORMER.transform(node)) {
             return ClassProcessor.ComputeFlags.NO_REWRITE;
         }
-        // Only maxStack changes; no locals, branches, or frames are introduced.
+        // The transformer writes a fresh token local and explicit F_FULL frames.
+        // Only max-stack recomputation is requested; hierarchy-sensitive frame
+        // computation would unnecessarily load Minecraft classes.
         return ClassProcessor.ComputeFlags.COMPUTE_MAXS;
     }
 

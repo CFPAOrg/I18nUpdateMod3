@@ -1,16 +1,22 @@
 package i18nupdatemod.core;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.Handle;
+import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.IincInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Adds runtime resource-pack selection callbacks to Minecraft's Options class.
@@ -32,9 +38,10 @@ public final class PackSelectionTransformer {
 
     private static final String CALLBACK_OWNER = "i18nupdatemod/core/RuntimePackActivation";
     private static final String BEFORE_NAME = "beforeSelection";
-    private static final String BEFORE_DESC = "(Ljava/lang/Object;Ljava/lang/String;)V";
+    private static final String BEFORE_DESC = "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;";
     private static final String AFTER_NAME = "afterSelection";
-    private static final String AFTER_DESC = "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+    private static final String AFTER_DESC = "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+    private static final String FRAME_TOKEN = "java/lang/Object";
 
     private static final String REPOSITORY_ARGUMENT = "(L" + PACK_REPOSITORY + ";)V";
     private static final String SET_SELECTED_DESC = "(" + COLLECTION + ")V";
@@ -55,29 +62,55 @@ public final class PackSelectionTransformer {
             return false;
         }
 
-        boolean changed = false;
-        if (!containsCallback(binding.selectionMethod, BEFORE_NAME, BEFORE_DESC)) {
-            binding.selectionMethod.instructions.insert(newBeforeInstructions(binding.selectedFieldName));
-            changed = true;
+        boolean hasBefore = containsCallback(binding.selectionMethod, BEFORE_NAME, BEFORE_DESC);
+        boolean hasAfter = containsCallback(binding.selectionMethod, AFTER_NAME, AFTER_DESC);
+        if (hasBefore && hasAfter) {
+            return false;
         }
-        if (!containsCallback(binding.selectionMethod, AFTER_NAME, AFTER_DESC)) {
-            InsnList after = newAfterInstructions(binding);
-            for (AbstractInsnNode instruction = binding.selectionMethod.instructions.getLast();
-                 instruction != null;
-                 instruction = instruction.getPrevious()) {
-                if (instruction.getOpcode() == Opcodes.RETURN) {
-                    binding.selectionMethod.instructions.insertBefore(instruction, cloneInstructions(after));
-                    changed = true;
-                }
+        if (hasBefore || hasAfter) {
+            // A partially transformed target class has no reliable way to
+            // identify the token slot. Leave it unchanged and report the
+            // unavailable hook through the explicit P4 fallback.
+            RuntimePackActivation.onBindingFailure();
+            return false;
+        }
+
+        final int tokenIndex;
+        final FramePlan framePlan;
+        try {
+            tokenIndex = freshLocalIndex(binding.selectionMethod);
+            if (tokenIndex < 0 || tokenIndex >= 65535) {
+                throw new IllegalArgumentException("no JVM local slot for activation token");
+            }
+            framePlan = planFrames(classNode, binding.selectionMethod, tokenIndex);
+        } catch (RuntimeException unsupported) {
+            // Frame validation failed before any class mutation. This target
+            // class cannot safely receive the hook, so use explicit fallback.
+            RuntimePackActivation.onBindingFailure();
+            return false;
+        }
+
+        // Frame validation is complete before any instruction or class metadata
+        // is changed. This keeps fallback safe when a loader supplies a frame
+        // shape that cannot be represented without resolving game classes.
+        framePlan.apply();
+        binding.selectionMethod.instructions.insert(
+                newBeforeInstructions(binding.selectedFieldName, tokenIndex));
+        InsnList after = newAfterInstructions(binding, tokenIndex);
+        for (AbstractInsnNode instruction = binding.selectionMethod.instructions.getLast();
+             instruction != null;
+             instruction = instruction.getPrevious()) {
+            if (instruction.getOpcode() == Opcodes.RETURN) {
+                binding.selectionMethod.instructions.insertBefore(instruction,
+                        cloneInstructions(after));
             }
         }
 
-        if (changed) {
-            // The largest injected sequence has six object references on the stack.
-            // No locals, branches, or frames are introduced.
-            binding.selectionMethod.maxStack = Math.max(binding.selectionMethod.maxStack, 6);
-        }
-        return changed;
+        // The after callback consumes seven object/string references. The
+        // token occupies a genuinely fresh slot after every pre-existing local.
+        binding.selectionMethod.maxStack = Math.max(binding.selectionMethod.maxStack, 7);
+        binding.selectionMethod.maxLocals = tokenIndex + 1;
+        return true;
     }
 
     private static Binding bind(ClassNode classNode) {
@@ -120,7 +153,8 @@ public final class PackSelectionTransformer {
 
         if (selection == null || update == null || setSelectedName == null
                 || selectedPacksName == null || packIdName == null
-                || fixedPositionName == null) {
+                || fixedPositionName == null || !containsReturn(selection)
+                || (selection.access & Opcodes.ACC_STATIC) != 0) {
             return null;
         }
 
@@ -132,6 +166,18 @@ public final class PackSelectionTransformer {
         return new Binding(selection, selectedFieldName, selectedPacksName, packIdName,
                 fixedPositionName, setSelectedName);
     }
+
+    private static boolean containsReturn(MethodNode method) {
+        for (AbstractInsnNode instruction = method.instructions.getFirst();
+             instruction != null;
+             instruction = instruction.getNext()) {
+            if (instruction.getOpcode() == Opcodes.RETURN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private static String findSetSelectedName(MethodNode method) {
         for (AbstractInsnNode instruction = method.instructions.getFirst();
@@ -279,17 +325,166 @@ public final class PackSelectionTransformer {
         return false;
     }
 
-    private static InsnList newBeforeInstructions(String selectedFieldName) {
+    /**
+     * Computes a slot that is beyond every local the original instance method
+     * could address. Its recorded maxLocals is authoritative when larger than
+     * the instruction scan; the exact binding shape always starts at slots 0/1.
+     */
+    private static int freshLocalIndex(MethodNode method) {
+        int limit = 2;
+        for (AbstractInsnNode instruction = method.instructions.getFirst();
+             instruction != null;
+             instruction = instruction.getNext()) {
+            if (instruction instanceof VarInsnNode) {
+                VarInsnNode variable = (VarInsnNode) instruction;
+                int width = (variable.getOpcode() == Opcodes.LLOAD
+                        || variable.getOpcode() == Opcodes.DLOAD
+                        || variable.getOpcode() == Opcodes.LSTORE
+                        || variable.getOpcode() == Opcodes.DSTORE) ? 2 : 1;
+                limit = Math.max(limit, variable.var + width);
+            } else if (instruction instanceof IincInsnNode) {
+                limit = Math.max(limit, ((IincInsnNode) instruction).var + 1);
+            }
+        }
+        return Math.max(limit, method.maxLocals);
+    }
+
+    /**
+     * Rebuilds every existing frame as an explicit F_FULL frame with the
+     * invocation-local token at its final slot. Relative compressed frames
+     * cannot retain an appended local through F_CHOP, so normalizing all
+     * forms here is less error-prone than trying to patch only F_APPEND.
+     *
+     * <p>No type hierarchy is inspected: frame object values are copied as
+     * their existing internal names/labels. The only new verification type is
+     * java/lang/Object, which is valid for the callback result.</p>
+     */
+    private static FramePlan planFrames(ClassNode classNode, MethodNode method,
+                                        int tokenIndex) {
+        List<FrameUpdate> updates = new ArrayList<FrameUpdate>();
+        List<Object> previousLocals = initialLocals(classNode);
+
+        for (AbstractInsnNode instruction = method.instructions.getFirst();
+             instruction != null;
+             instruction = instruction.getNext()) {
+            if (!(instruction instanceof FrameNode)) {
+                continue;
+            }
+
+            FrameNode frame = (FrameNode) instruction;
+            List<Object> locals;
+            List<Object> stack;
+            switch (frame.type) {
+                case Opcodes.F_NEW:
+                case Opcodes.F_FULL:
+                    locals = normalizeFrameValues(frame.local);
+                    stack = normalizeFrameValues(frame.stack);
+                    break;
+                case Opcodes.F_APPEND:
+                    // Reconstruct the original state first; the token is
+                    // appended only after relative-frame changes are applied.
+                    locals = new ArrayList<Object>(previousLocals);
+                    locals.addAll(normalizeFrameValues(frame.local));
+                    stack = Collections.emptyList();
+                    break;
+                case Opcodes.F_CHOP:
+                    int chopped = frame.local == null ? 0 : frame.local.size();
+                    if (chopped < 1 || chopped > previousLocals.size()) {
+                        throw new IllegalArgumentException("invalid F_CHOP frame");
+                    }
+                    locals = new ArrayList<Object>(
+                            previousLocals.subList(0, previousLocals.size() - chopped));
+                    stack = Collections.emptyList();
+                    break;
+                case Opcodes.F_SAME:
+                    locals = new ArrayList<Object>(previousLocals);
+                    stack = Collections.emptyList();
+                    break;
+                case Opcodes.F_SAME1:
+                    locals = new ArrayList<Object>(previousLocals);
+                    stack = normalizeFrameValues(frame.stack);
+                    if (stack.size() != 1) {
+                        throw new IllegalArgumentException("invalid F_SAME1 frame");
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("unsupported stack-map frame type "
+                            + frame.type);
+            }
+
+            List<Object> adjustedLocals = appendToken(locals, tokenIndex);
+            updates.add(new FrameUpdate(frame, adjustedLocals, stack));
+            previousLocals = locals;
+        }
+        return new FramePlan(updates);
+    }
+
+    private static List<Object> initialLocals(ClassNode classNode) {
+        List<Object> locals = new ArrayList<Object>();
+        locals.add(classNode.name);
+        locals.add(PACK_REPOSITORY);
+        return locals;
+    }
+
+    private static List<Object> normalizeFrameValues(List<Object> values) {
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<Object>();
+        }
+        List<Object> normalized = new ArrayList<Object>(values.size());
+        for (Object value : values) {
+            if (value == null) {
+                throw new IllegalArgumentException("null stack-map value");
+            }
+            // ASM encodes each category-2 value as one frame entry. Preserve
+            // every explicit entry, including TOP gaps in local arrays.
+            normalized.add(value);
+        }
+        return normalized;
+    }
+
+    private static boolean isCategory2(Object value) {
+        return value instanceof Integer
+                && (Opcodes.LONG == ((Integer) value)
+                || Opcodes.DOUBLE == ((Integer) value));
+    }
+
+    private static List<Object> appendToken(List<Object> original, int tokenIndex) {
+        // Frame lists count verification entries (long/double once), while
+        // the JVM local index counts their two physical slots.
+        List<Object> adjusted = new ArrayList<Object>(original);
+        int slots = localSlotCount(adjusted);
+        if (slots > tokenIndex) {
+            throw new IllegalArgumentException("frame local exceeds token slot");
+        }
+        while (slots < tokenIndex) {
+            adjusted.add(Opcodes.TOP);
+            slots++;
+        }
+        adjusted.add(FRAME_TOKEN);
+        return adjusted;
+    }
+
+    private static int localSlotCount(List<Object> locals) {
+        int slots = 0;
+        for (Object local : locals) {
+            slots += isCategory2(local) ? 2 : 1;
+        }
+        return slots;
+    }
+
+    private static InsnList newBeforeInstructions(String selectedFieldName, int tokenIndex) {
         InsnList instructions = new InsnList();
         instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
         instructions.add(new LdcInsnNode(selectedFieldName));
         instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, CALLBACK_OWNER,
                 BEFORE_NAME, BEFORE_DESC, false));
+        instructions.add(new VarInsnNode(Opcodes.ASTORE, tokenIndex));
         return instructions;
     }
 
-    private static InsnList newAfterInstructions(Binding binding) {
+    private static InsnList newAfterInstructions(Binding binding, int tokenIndex) {
         InsnList instructions = new InsnList();
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, tokenIndex));
         instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
         instructions.add(new VarInsnNode(Opcodes.ALOAD, 1));
         instructions.add(new LdcInsnNode(binding.selectedPacksMethodName));
@@ -300,6 +495,35 @@ public final class PackSelectionTransformer {
                 AFTER_NAME, AFTER_DESC, false));
         return instructions;
     }
+
+    private static final class FramePlan {
+        private final List<FrameUpdate> updates;
+
+        private FramePlan(List<FrameUpdate> updates) {
+            this.updates = updates;
+        }
+
+        private void apply() {
+            for (FrameUpdate update : updates) {
+                update.frame.type = Opcodes.F_FULL;
+                update.frame.local = update.locals;
+                update.frame.stack = update.stack;
+            }
+        }
+    }
+
+    private static final class FrameUpdate {
+        private final FrameNode frame;
+        private final List<Object> locals;
+        private final List<Object> stack;
+
+        private FrameUpdate(FrameNode frame, List<Object> locals, List<Object> stack) {
+            this.frame = frame;
+            this.locals = locals;
+            this.stack = stack;
+        }
+    }
+
 
     /**
      * InsnList nodes cannot be shared between multiple insertion points. Cloning is

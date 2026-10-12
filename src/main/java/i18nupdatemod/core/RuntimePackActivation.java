@@ -3,7 +3,6 @@ package i18nupdatemod.core;
 import i18nupdatemod.util.Log;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -12,8 +11,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * Defers NeoForge resource-pack activation until the real client resource-pack
@@ -26,8 +23,6 @@ import java.util.WeakHashMap;
  */
 public final class RuntimePackActivation {
     private static final Object STATE_LOCK = new Object();
-    private static final Map<Object, SelectionCapture> CAPTURES =
-            new WeakHashMap<>();
 
     private static volatile boolean enabled;
     private static PendingActivation pending;
@@ -145,15 +140,14 @@ public final class RuntimePackActivation {
      * Runs at the head of Options.loadSelectedResourcePacks.  It changes only
      * the selected resource-pack list and leaves persistence to afterSelection.
      */
-    public static void beforeSelection(Object options, String selectedFieldName) {
+    public static Object beforeSelection(Object options, String selectedFieldName) {
         PendingActivation activation;
         synchronized (STATE_LOCK) {
             if (!enabled || options == null || pending == null) {
-                return;
+                return null;
             }
-            /* Consume before doing reflection.  The capture below is the
-             * hand-off that lets afterSelection run even after this token is
-             * consumed, including when a reload re-enters this method. */
+            /* Consume before doing reflection.  The returned capture is the
+             * invocation-local hand-off to afterSelection. */
             activation = pending;
             pending = null;
         }
@@ -167,7 +161,7 @@ public final class RuntimePackActivation {
 
             @SuppressWarnings("unchecked")
             List<Object> selected = (List<Object>) selectedObject;
-            capture.selectedReference = new WeakReference<>(selected);
+            capture.selected = selected;
             capture.original = new ArrayList<>(selected);
 
             List<Object> desired = desiredSelection(capture.original, activation.targetId);
@@ -181,18 +175,14 @@ public final class RuntimePackActivation {
             capture.beforeSucceeded = false;
             reportFailure("unable to prepare in-memory resource-pack selection", failure);
         }
-
-        synchronized (STATE_LOCK) {
-            if (enabled) {
-                CAPTURES.put(options, capture);
-            }
-        }
+        return capture;
     }
 
     /**
      * Runs immediately before loadSelectedResourcePacks returns.  The method
-     * receives names discovered by the transformer, so no Minecraft mappings
-     * are linked from this class.
+     * receives the invocation-local token returned by beforeSelection and
+     * names discovered by the transformer, so no Minecraft mappings are linked
+     * from this class.
      *
      * <p>For a first registration, the generated pack is moved to the end of
      * the repository's visible selection and the repository is updated.  For
@@ -202,18 +192,22 @@ public final class RuntimePackActivation {
      * after startup mod loading, so serializing the full Options object here
      * would erase bindings that have not registered yet.</p>
      */
-    public static void afterSelection(Object options,
+    public static void afterSelection(Object token,
+                                      Object options,
                                       Object repository,
                                       String selectedPacksMethodName,
                                       String packIdMethodName,
                                       String fixedPositionMethodName,
                                       String setSelectedMethodName) {
-        SelectionCapture capture;
-        synchronized (STATE_LOCK) {
-            capture = options == null ? null : CAPTURES.remove(options);
-        }
-        if (capture == null) {
+        if (!(token instanceof SelectionCapture)) {
             return;
+        }
+        SelectionCapture capture = (SelectionCapture) token;
+        synchronized (STATE_LOCK) {
+            if (capture.consumed) {
+                return;
+            }
+            capture.consumed = true;
         }
         if (!capture.beforeSucceeded || !capture.changed) {
             return;
@@ -237,6 +231,7 @@ public final class RuntimePackActivation {
             restoreSelection(capture, "runtime selection failed", failure);
         }
     }
+
 
     private static void activateFirstSelection(SelectionCapture capture,
                                                Object options,
@@ -522,12 +517,10 @@ public final class RuntimePackActivation {
     }
 
     private static List<Object> selectedList(SelectionCapture capture) throws Exception {
-        List<Object> selected = capture.selectedReference == null
-                ? null : capture.selectedReference.get();
-        if (selected == null) {
+        if (capture.selected == null) {
             throw new IllegalStateException("selected resource-pack list is no longer available");
         }
-        return selected;
+        return capture.selected;
     }
 
 
@@ -536,8 +529,7 @@ public final class RuntimePackActivation {
     }
 
     private static void restoreSelection(SelectionCapture capture, String reason, Throwable failure) {
-        List<Object> selected = capture.selectedReference == null
-                ? null : capture.selectedReference.get();
+        List<Object> selected = capture.selected;
         if (selected != null && capture.original != null) {
             try {
                 replaceList(selected, capture.original);
@@ -689,11 +681,12 @@ public final class RuntimePackActivation {
 
     private static final class SelectionCapture {
         final String targetId;
-        WeakReference<List<Object>> selectedReference;
+        List<Object> selected;
         List<Object> original;
         boolean firstRegistration;
         boolean changed;
         boolean beforeSucceeded;
+        boolean consumed;
 
         SelectionCapture(String targetId) {
             this.targetId = targetId;
