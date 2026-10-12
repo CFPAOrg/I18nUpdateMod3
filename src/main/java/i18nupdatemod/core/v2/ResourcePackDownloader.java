@@ -20,6 +20,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
@@ -390,6 +391,9 @@ public class ResourcePackDownloader {
     private static void updateMod(ResourcePackHttp source, String assetPath, String rawNamespace,
                                   Path cached, Path md5File)
             throws IOException, AssetFailure, NoSuchAlgorithmException {
+        // .zip.md5 would collide with the source digest of a namespace ending in ".zip".
+        Path zipMd5File = cached.resolveSibling(cached.getFileName() + "md5");
+        discardUnverifiedCache(cached, md5File, zipMd5File);
         if (Files.isRegularFile(cached) && Files.isRegularFile(md5File)
                 && Files.getLastModifiedTime(cached).toMillis()
                 > System.currentTimeMillis() - UPDATE_TIME_GAP) {
@@ -421,13 +425,36 @@ public class ResourcePackDownloader {
                 throw new AssetFailure("Failed to decode translation archive: " + assetPath, e);
             }
 
+            String zipMd5 = DigestUtil.md5Hex(decoded);
             Files.move(decoded, cached, StandardCopyOption.REPLACE_EXISTING);
             Files.write(md5File, remoteMd5.getBytes(StandardCharsets.UTF_8));
+            Files.write(zipMd5File, zipMd5.getBytes(StandardCharsets.UTF_8));
         } finally {
             Files.deleteIfExists(archive);
             Files.deleteIfExists(decoded);
         }
     }
+
+    private static void discardUnverifiedCache(Path cached, Path sourceMd5File, Path zipMd5File)
+            throws IOException, NoSuchAlgorithmException {
+        if (!Files.isRegularFile(cached)) {
+            return;
+        }
+        String expected = null;
+        try {
+            expected = new String(Files.readAllBytes(zipMd5File), StandardCharsets.UTF_8).trim();
+        } catch (NoSuchFileException missing) {
+            // Old caches have no trusted decoded-ZIP digest; fetch them again rather than signing unknown bytes.
+        }
+        if (expected != null && expected.equalsIgnoreCase(DigestUtil.md5Hex(cached))) {
+            return;
+        }
+        Files.delete(cached);
+        Files.deleteIfExists(zipMd5File);
+        Files.deleteIfExists(sourceMd5File);
+        Log.info("Discarded unverified translation cache: %s", cached);
+    }
+
     private static String readRemoteText(ResourcePackHttp source, String path)
             throws IOException, AssetFailure {
         InputStream input = fetchAsset(source, path);
@@ -545,7 +572,7 @@ public class ResourcePackDownloader {
         try (DirectoryStream<Path> files = Files.newDirectoryStream(cache)) {
             for (Path file : files) {
                 String name = file.getFileName().toString();
-                if (!name.endsWith(".zip") && !name.endsWith(".md5")) {
+                if (!name.endsWith(".zip") && !name.endsWith(".md5") && !name.endsWith(".zipmd5")) {
                     continue;
                 }
                 String encoded = name.substring(0, name.lastIndexOf('.'));
