@@ -14,6 +14,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class GameConfig {
     /**
      * 避免NeoForge修改资源包顺序导致的按键配置丢失问题。
      */
-    static void updateResourcePacks(Path configFile, List<String> resourcePacks)
+    static void updateResourcePacks(Path configFile, List<?> resourcePacks)
             throws Exception {
         Path absolute = configFile.toAbsolutePath().normalize();
         byte[] originalBytes;
@@ -84,6 +85,40 @@ public class GameConfig {
                 Files.deleteIfExists(temporary);
             }
         }
+    }
+
+    /** Reads the effective (last) resourcePacks option without decoding unrelated option bytes. */
+    static List<String> readResourcePacks(Path configFile) throws Exception {
+        final byte[] bytes;
+        try {
+            bytes = Files.readAllBytes(configFile);
+        } catch (NoSuchFileException missing) {
+            return Collections.emptyList();
+        }
+        int valueStart = -1;
+        int valueEnd = 0;
+        for (int offset = 0; offset < bytes.length;) {
+            int newline = indexOf(bytes, (byte) '\n', offset, bytes.length);
+            int contentEnd = newline < 0 ? bytes.length : newline;
+            if (contentEnd > offset && bytes[contentEnd - 1] == '\r') {
+                contentEnd--;
+            }
+            int colon = indexOf(bytes, (byte) ':', offset, contentEnd);
+            if (colon >= 0 && isResourcePacksKey(bytes, offset, colon)) {
+                valueStart = colon + 1;
+                valueEnd = contentEnd;
+            }
+            offset = newline < 0 ? bytes.length : newline + 1;
+        }
+        if (valueStart < 0) {
+            return Collections.emptyList();
+        }
+        List<String> selected = GSON.fromJson(
+                new String(bytes, valueStart, valueEnd - valueStart, StandardCharsets.UTF_8), STRING_LIST_TYPE);
+        if (selected == null) {
+            throw new IllegalStateException("resourcePacks must be a JSON array");
+        }
+        return selected;
     }
 
     private static byte[] replaceResourcePacksLines(byte[] original, byte[] encodedLine) {

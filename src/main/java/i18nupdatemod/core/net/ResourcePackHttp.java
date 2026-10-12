@@ -73,7 +73,7 @@ public final class ResourcePackHttp {
             try {
                 return request(bmclBaseUrl + relativePath, bmclRequests);
             } catch (HttpStatusException failure) {
-                if (failure.status < 500 || failure.status > 599) throw failure;
+                if (failure.status != 429 && (failure.status < 500 || failure.status > 599)) throw failure;
             }
         }
         return request(i18nBaseUrl + relativePath, baseRequests);

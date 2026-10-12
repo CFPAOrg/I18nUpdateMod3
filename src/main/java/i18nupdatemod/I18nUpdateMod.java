@@ -59,7 +59,9 @@ public class I18nUpdateMod {
 
             // NeoForge applies the selection after its resource repository is populated.
             if (RuntimePackActivation.isEnabled()) {
-                RuntimePackActivation.prepare(minecraftPath, convertedPack);
+                if (!RuntimePackActivation.prepare(minecraftPath, convertedPack)) {
+                    Log.warning("Unable to schedule or persist resource-pack activation; enable %s manually.", convertedPack);
+                }
                 return;
             }
 

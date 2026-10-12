@@ -31,6 +31,7 @@ public final class RuntimePackActivation {
 
     private static volatile boolean enabled;
     private static PendingActivation pending;
+    private static boolean bindingFailed;
 
     /* The generated file name is stable across game versions. */
     private static final String I18N_FILE_PREFIX = "Minecraft-Mod-Language-Modpack-Converted-";
@@ -56,14 +57,39 @@ public final class RuntimePackActivation {
     }
 
     /**
+     * Records an explicit Options binding failure, not a generic no-change transform result.
+     * A prepared pack is persisted now; a later prepare call uses the same file fallback.
+     */
+    public static void onBindingFailure() {
+        PendingActivation fallback;
+        boolean firstFailure;
+        synchronized (STATE_LOCK) {
+            firstFailure = !bindingFailed;
+            bindingFailed = true;
+            fallback = pending;
+            pending = null;
+        }
+        if (firstFailure) {
+            reportFailure("Options binding unavailable; switching to options.txt fallback", null);
+        }
+        if (fallback != null) {
+            persistFileFallback(fallback);
+        }
+    }
+
+    /**
      * Records a successfully generated pack for the next Options selection
-     * pass.  This method intentionally never opens options.txt.
+     * pass, or persists its selection if runtime binding has explicitly failed.
      *
-     * @return false when runtime activation is disabled or the generated file
-     * is not an available, non-empty regular file
+     * @return false when activation is disabled, the pack is unavailable,
+     * or the file fallback cannot be saved
      */
     public static boolean prepare(Path gameDirectory, Path completedPack) {
         if (!enabled) {
+            return false;
+        }
+        if (gameDirectory == null) {
+            reportFailure("game directory is null", null);
             return false;
         }
         if (completedPack == null) {
@@ -87,18 +113,32 @@ public final class RuntimePackActivation {
             return false;
         }
 
-        /* gameDirectory is part of the public lifecycle contract.  The file
-         * itself is authoritative; callers may use a custom resource-pack
-         * directory below the game directory, so do not require a particular
-         * parent here. */
+        // The game directory locates options.txt; the pack may be in a custom resource-pack directory.
         String targetId = FILE_ID_PREFIX + fileName;
         synchronized (STATE_LOCK) {
             if (!enabled) {
                 return false;
             }
-            pending = new PendingActivation(targetId);
+            if (!bindingFailed) {
+                pending = new PendingActivation(targetId, gameDirectory.resolve("options.txt"));
+                return true;
+            }
         }
-        return true;
+        return persistFileFallback(new PendingActivation(targetId, gameDirectory.resolve("options.txt")));
+    }
+
+    private static boolean persistFileFallback(PendingActivation activation) {
+        try {
+            List<String> selected = GameConfig.readResourcePacks(activation.optionsFile);
+            GameConfig.updateResourcePacks(activation.optionsFile, desiredSelection(selected, activation.targetId));
+            Log.warning("Saved resource-pack selection fallback to %s. Runtime priority adjustment is unavailable; "
+                    + "a restart or manual pack selection/reordering may be required.", activation.optionsFile);
+            return true;
+        } catch (Throwable failure) {
+            reportFailure("cannot save resource-pack fallback to " + activation.optionsFile
+                    + "; enable " + activation.targetId + " manually", failure);
+            return false;
+        }
     }
 
     /**
@@ -377,7 +417,7 @@ public final class RuntimePackActivation {
         return ids;
     }
 
-    private static List<Object> desiredSelection(List<Object> original, String targetId) {
+    private static List<Object> desiredSelection(List<?> original, String targetId) {
         boolean hasExact = false;
         int firstFamily = -1;
         for (int i = 0; i < original.size(); i++) {
@@ -639,9 +679,11 @@ public final class RuntimePackActivation {
 
     private static final class PendingActivation {
         final String targetId;
+        final Path optionsFile;
 
-        PendingActivation(String targetId) {
+        PendingActivation(String targetId, Path optionsFile) {
             this.targetId = targetId;
+            this.optionsFile = optionsFile;
         }
     }
 

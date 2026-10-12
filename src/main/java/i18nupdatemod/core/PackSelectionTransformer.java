@@ -1,6 +1,5 @@
 package i18nupdatemod.core;
 
-import i18nupdatemod.util.Log;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -52,7 +51,7 @@ public final class PackSelectionTransformer {
 
         Binding binding = bind(classNode);
         if (binding == null) {
-            Log.warning("Unable to bind runtime resource-pack selection; enable the generated pack manually.");
+            RuntimePackActivation.onBindingFailure();
             return false;
         }
 
