@@ -40,9 +40,7 @@ public class GameConfig {
         Log.info("Resource Packs: %s", resourcePacks);
     }
 
-    /**
-     * 避免NeoForge修改资源包顺序导致的按键配置丢失问题。
-     */
+    /** 避免NeoForge修改资源包顺序导致的按键配置丢失问题。 */
     static void updateResourcePacks(Path configFile, List<?> resourcePacks)
             throws Exception {
         Path absolute = configFile.toAbsolutePath().normalize();

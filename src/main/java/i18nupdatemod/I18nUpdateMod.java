@@ -3,6 +3,7 @@ package i18nupdatemod;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import i18nupdatemod.core.GameConfig;
+import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.ResourcePackUpdater;
 import i18nupdatemod.core.RuntimePackActivation;
 import i18nupdatemod.entity.ModTranslation;
@@ -50,6 +51,8 @@ public class I18nUpdateMod {
             return;
         } catch (ClassNotFoundException ignored) {
         }
+
+        I18nUserConfig.load(minecraftPath);
 
         try {
             Path resourcePackDirectory = minecraftPath.resolve("resourcepacks");

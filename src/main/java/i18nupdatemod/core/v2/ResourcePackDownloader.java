@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.entity.ModTranslation;
 import i18nupdatemod.util.DigestUtil;
@@ -41,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ResourcePackDownloader {
     private static final Gson GSON = new Gson();
-    private static final long UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(1);
     private static final long ICON_UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(30);
 
     public static Manifest loadManifest(ResourcePackHttp source, String version) throws IOException {
@@ -396,7 +396,7 @@ public class ResourcePackDownloader {
         discardUnverifiedCache(cached, md5File, zipMd5File);
         if (Files.isRegularFile(cached) && Files.isRegularFile(md5File)
                 && Files.getLastModifiedTime(cached).toMillis()
-                > System.currentTimeMillis() - UPDATE_TIME_GAP) {
+                > System.currentTimeMillis() - I18nUserConfig.cacheTtlMillis()) {
             return;
         }
 
