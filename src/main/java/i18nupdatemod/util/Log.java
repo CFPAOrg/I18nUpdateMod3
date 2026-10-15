@@ -39,7 +39,7 @@ public class Log {
         STD_ERR
     }
 
-    private static void log(Level level, String message) {
+    private static synchronized void log(Level level, String message) {
         String out = String.format("[%s] [%s]: %s\r\n", DATE_FORMAT.format(new Date()), level.name(), message);
         if (fileWriter != null) {
             try {

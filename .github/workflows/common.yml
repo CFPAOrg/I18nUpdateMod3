@@ -12,7 +12,14 @@ on:
       change-log:
         required: false
         type: string
-
+      build-task:
+        required: false
+        type: string
+        default: buildRelease
+      artifact-path:
+        required: false
+        type: string
+        default: build/libs/I18nUpdateMod-*-all.jar
 jobs:
   build-common:
     name: Build Common
@@ -34,10 +41,10 @@ jobs:
         env:
           IS_SNAPSHOT: ${{ inputs.is-snapshot }}
         run: |
-          ./gradlew clean shadowJar --info --stacktrace
+          ./gradlew clean ${{ inputs.build-task }} --info --stacktrace
       -
         name: Publish Modrinth
-        if: ${{ !inputs.is-snapshot }}
+        if: ${{ !inputs.is-snapshot && inputs.build-task == 'buildRelease' }}
         env:
           IS_SNAPSHOT: ${{ inputs.is-snapshot }}
           CHANGE_LOG: ${{ inputs.change-log }}
@@ -46,7 +53,7 @@ jobs:
           ./gradlew modrinth modrinthSyncBody --info --stacktrace
       -
         name: Publish CurseForge
-        if: ${{ !inputs.is-snapshot }}
+        if: ${{ !inputs.is-snapshot && inputs.build-task == 'buildRelease' }}
         env:
           IS_SNAPSHOT: ${{ inputs.is-snapshot }}
           CHANGE_LOG: ${{ inputs.change-log }}
@@ -57,4 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: I18nUpdateMod-${{ inputs.type }}-${{ github.run_number }}
-          path: build/libs
+          path: ${{ inputs.artifact-path }}
+          if-no-files-found: error

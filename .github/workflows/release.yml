@@ -11,4 +11,6 @@ jobs:
       type: Release
       is-snapshot: false
       change-log: ${{ github.event.release.body }}
+      build-task: buildRelease
+      artifact-path: build/libs/I18nUpdateMod-*-all.jar
     secrets: inherit

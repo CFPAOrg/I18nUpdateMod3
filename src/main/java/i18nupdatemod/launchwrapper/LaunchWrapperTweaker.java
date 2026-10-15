@@ -21,7 +21,7 @@ public class LaunchWrapperTweaker implements ITweaker {
             Log.warning("Failed to get minecraft version.");
             return;
         }
-        I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge", ModUtil.getModDomainsFromModsFolder(gameDir.toPath(), mcVersion, "Forge"));
+        I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge", ModUtil.getModsFromModsFolder(gameDir.toPath()));
     }
 
     @Override

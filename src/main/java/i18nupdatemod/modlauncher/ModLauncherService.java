@@ -8,6 +8,7 @@ import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.IncompatibleEnvironmentException;
 import i18nupdatemod.I18nUpdateMod;
 import i18nupdatemod.util.Log;
+import i18nupdatemod.core.RuntimePackActivation;
 import i18nupdatemod.util.ModUtil;
 import i18nupdatemod.util.Reflection;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +20,8 @@ import java.util.*;
 
 import static i18nupdatemod.I18nUpdateMod.GSON;
 
-//1.13-latest
+//MinecraftForge: 1.13-latest
+//NeoForge: 1.20.1-1.21.8
 public class ModLauncherService implements ITransformationService {
     @Override
     public @NotNull String name() {
@@ -39,7 +41,13 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge",  ModUtil.getModDomainsFromModsFolder(minecraftPath.get(), minecraftVersion, "Forge"));
+        try {
+            Class.forName("net.neoforged.fml.loading.FMLLoader", false, getClass().getClassLoader());
+            RuntimePackActivation.enable();
+        } catch (ClassNotFoundException ignored) {
+            // Forge keeps the existing file-based activation path.
+        }
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", ModUtil.getModsFromModsFolder(minecraftPath.get()));
     }
 
     @Override
@@ -54,12 +62,12 @@ public class ModLauncherService implements ITransformationService {
 
     @Override
     public @NotNull List<ITransformer> transformers() {
-        return Collections.emptyList();
+        return Collections.singletonList(ModLauncherPackTransformer.create());
     }
 
     private String getMinecraftVersion() {
         // MinecraftForge 1.13~1.20.2
-        // NeoForge 1.20.1~
+        // NeoForge 1.20.1~1.21.8
         try {
             String[] args = (String[]) Reflection.clazz(Launcher.INSTANCE).get("argumentHandler").get("args").get();
             for (int i = 0; i < args.length - 1; ++i) {
