@@ -31,6 +31,20 @@ public class LegacyConfig {
         return current.stream()
                 .filter(it -> it.loader.equalsIgnoreCase(loader))
                 .findFirst()
-                .orElseGet(() -> current.get(0));
+                .orElseGet(() -> current.stream()
+                        .filter(it -> it.loader.equalsIgnoreCase(downloadKey(loader)))
+                        .findFirst()
+                        .orElseGet(() -> current.get(0)));
+    }
+
+    /** The metadata only ever names Forge and Fabric assets. */
+    private static String downloadKey(String loader) {
+        if ("NeoForge".equalsIgnoreCase(loader)) {
+            return "Forge";
+        }
+        if ("Quilt".equalsIgnoreCase(loader)) {
+            return "Fabric";
+        }
+        return loader;
     }
 }

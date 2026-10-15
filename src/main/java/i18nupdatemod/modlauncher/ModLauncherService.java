@@ -45,13 +45,16 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft version not found");
             return;
         }
+        boolean neoForge;
         try {
             Class.forName("net.neoforged.fml.loading.FMLLoader", false, getClass().getClassLoader());
+            neoForge = true;
             RuntimePackActivation.enable();
         } catch (ClassNotFoundException ignored) {
-            // Forge keeps the existing file-based activation path.
+            neoForge = false;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", ModUtil.getModsFromModsFolder(minecraftPath.get()));
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, neoForge ? "NeoForge" : "Forge",
+                ModUtil.getModsFromModsFolder(minecraftPath.get()));
     }
 
     @Override

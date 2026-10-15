@@ -21,7 +21,17 @@ public class FabricLoaderMod implements ClientModInitializer {
             Log.warning("Minecraft version not found");
             return;
         }
-        I18nUpdateMod.init(gameDir, mcVersion, "Fabric", ModUtil.getModsFromModsFolder(gameDir));
+        I18nUpdateMod.init(gameDir, mcVersion, isQuilt() ? "Quilt" : "Fabric",
+                ModUtil.getModsFromModsFolder(gameDir));
+    }
+
+    private boolean isQuilt() {
+        try {
+            Class.forName("org.quiltmc.loader.api.QuiltLoader", false, getClass().getClassLoader());
+            return true;
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        }
     }
 
     private String getMcVersion() {

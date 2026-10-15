@@ -34,7 +34,7 @@ public class NeoForgeBootstrap implements GraphicsBootstrapper {
             // FML consumes --fml.mcVersion before calling bootstrappers; do not parse arguments.
             String version = (String) loader.get("getVersionInfo()").get("mcVersion()").get();
             RuntimePackActivation.enable();
-            I18nUpdateMod.init(gameDir, version, "Forge", ModUtil.getModsFromModsFolder(gameDir));
+            I18nUpdateMod.init(gameDir, version, "NeoForge", ModUtil.getModsFromModsFolder(gameDir));
         } catch (Exception e) {
             Log.warning("Failed to initialize NeoForge resource pack update: %s", e);
         }
