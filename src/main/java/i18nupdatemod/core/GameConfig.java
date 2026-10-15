@@ -3,7 +3,6 @@ package i18nupdatemod.core;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import i18nupdatemod.util.Log;
-import org.apache.commons.io.FileUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
@@ -13,12 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class GameConfig {
     private static final Gson GSON = new Gson();
@@ -26,23 +23,21 @@ public class GameConfig {
     }.getType();
     private static final byte[] RESOURCE_PACKS_KEY =
             "resourcePacks".getBytes(StandardCharsets.US_ASCII);
-    protected Map<String, String> configs = new LinkedHashMap<>();
-    private final Path configFile;
 
-    public GameConfig(Path configFile) throws Exception {
-        this.configFile = configFile;
-        if (!Files.exists(configFile)) {
-            return;
-        }
-        this.configs = FileUtils.readLines(configFile.toFile(), StandardCharsets.UTF_8).stream()
-                .map(it -> it.split(":", 2))
-                .filter(it -> it.length == 2)
-                .collect(Collectors.toMap(it -> it[0], it -> it[1], (a, b) -> a, LinkedHashMap::new));
+    private GameConfig() {
     }
 
-    public void writeToFile() throws Exception {
-        FileUtils.writeLines(configFile.toFile(), "UTF-8", configs.entrySet().stream()
-                .map(it -> it.getKey() + ":" + it.getValue()).collect(Collectors.toList()));
+    public static void addResourcePack(Path configFile, String baseName, String resourcePack)
+            throws Exception {
+        List<String> resourcePacks = new ArrayList<>(readResourcePacks(configFile));
+        if (resourcePacks.contains(resourcePack)) {
+            return;
+        }
+        // 换版本时清掉旧的同类包
+        resourcePacks.removeIf(it -> it.contains(baseName));
+        resourcePacks.add(resourcePack);
+        updateResourcePacks(configFile, resourcePacks);
+        Log.info("Resource Packs: %s", resourcePacks);
     }
 
     /**
@@ -204,21 +199,6 @@ public class GameConfig {
             }
         }
         return false;
-    }
-
-    public void addResourcePack(String baseName, String resourcePack) {
-        List<String> resourcePacks = GSON.fromJson(
-                configs.computeIfAbsent("resourcePacks", it -> "[]"), STRING_LIST_TYPE);
-        //If resource packs already contains target resource pack, nothing to do
-        if (resourcePacks.contains(resourcePack)) {
-            return;
-        }
-        //Remove other Minecraft Mod Language Pack
-        resourcePacks = resourcePacks.stream().filter(it -> !it.contains(baseName)).collect(Collectors.toList());
-        resourcePacks.add(resourcePack);
-        configs.put("resourcePacks", GSON.toJson(resourcePacks));
-        Log.info(String.format("Resource Packs: %s", configs.get("resourcePacks")));
-//        configs.put("lang", "zh_cn");
     }
 
 }

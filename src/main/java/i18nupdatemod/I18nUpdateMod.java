@@ -66,11 +66,9 @@ public class I18nUpdateMod {
             }
 
             //Apply resource pack
-            GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));
-            config.addResourcePack("Minecraft-Mod-Language-Modpack",
+            GameConfig.addResourcePack(minecraftPath.resolve("options.txt"), "Minecraft-Mod-Language-Modpack",
                     (Version.from(minecraftVersion).compareTo(Version.from("1.13")) < 0 ? "" : "file/")
                             + convertedPack.getFileName().toString());
-            config.writeToFile();
         } catch (Exception e) {
             Log.warning(String.format("Failed to update resource pack: %s", e));
 //            e.printStackTrace();
