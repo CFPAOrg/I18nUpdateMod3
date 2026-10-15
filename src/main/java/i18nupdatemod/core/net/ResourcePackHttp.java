@@ -21,16 +21,25 @@ public final class ResourcePackHttp {
 
     private final String i18nBaseUrl;
     private final String bmclBaseUrl;
+    private final String githubBaseUrl;
     private final Semaphore bmclRequests = new Semaphore(BMCL_PARALLELISM, true);
     private final Semaphore baseRequests = new Semaphore(I18N_PARALLELISM, true);
 
     public ResourcePackHttp(String i18nBaseUrl, String bmclBaseUrl) {
+        this(i18nBaseUrl, bmclBaseUrl, null);
+    }
+
+    public ResourcePackHttp(String i18nBaseUrl, String bmclBaseUrl, String githubBaseUrl) {
         this.i18nBaseUrl = root(i18nBaseUrl);
         this.bmclBaseUrl = bmclBaseUrl == null || bmclBaseUrl.isEmpty() ? null : root(bmclBaseUrl);
+        this.githubBaseUrl = githubBaseUrl == null || githubBaseUrl.isEmpty() ? null : root(githubBaseUrl);
         try {
             httpUrl(this.i18nBaseUrl);
             if (this.bmclBaseUrl != null) {
                 httpUrl(this.bmclBaseUrl);
+            }
+            if (this.githubBaseUrl != null) {
+                httpUrl(this.githubBaseUrl);
             }
         } catch (IOException e) {
             throw new IllegalArgumentException("Invalid resource source URL", e);
@@ -57,7 +66,8 @@ public final class ResourcePackHttp {
             properties.load(input);
             String base = properties.getProperty("assetBaseUrl");
             if (base == null || base.isEmpty()) throw new IOException("Missing assetBaseUrl in build configuration");
-            return new ResourcePackHttp(base, properties.getProperty("bmclBaseUrl"));
+            return new ResourcePackHttp(base, properties.getProperty("bmclBaseUrl"),
+                    properties.getProperty("githubBaseUrl"));
         } catch (IOException e) {
             throw new IllegalStateException("Cannot load bundled build configuration", e);
         }
@@ -77,6 +87,24 @@ public final class ResourcePackHttp {
             }
         }
         return request(i18nBaseUrl + relativePath, baseRequests);
+    }
+
+    /** V1 whole packs: mirrors first, then GitHub's fixed autobuild release. */
+    public InputStream openLegacy(String relativePath) throws IOException {
+        Objects.requireNonNull(relativePath, "relativePath");
+        try {
+            return open(relativePath);
+        } catch (IOException mirrorFailure) {
+            if (githubBaseUrl == null) {
+                throw mirrorFailure;
+            }
+            try {
+                return request(githubBaseUrl + relativePath, baseRequests);
+            } catch (IOException githubFailure) {
+                githubFailure.addSuppressed(mirrorFailure);
+                throw githubFailure;
+            }
+        }
     }
 
     private InputStream request(String address, Semaphore limit) throws IOException {

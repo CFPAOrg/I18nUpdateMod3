@@ -57,15 +57,17 @@ mapOf(
     val bmclBaseUrl = if (variant == "Release") {
         "https://bmclapi2.bangbang93.com/mirrors/i18n-update-mod/"
     } else ""
+    val githubBaseUrl = "https://github.com/CFPAOrg/Minecraft-Mod-Language-Package/releases/download/autobuild/"
     val configFile = layout.buildDirectory.file("generated/buildConfig/$variant/i18n-build.properties")
     val generateConfig = tasks.register("generate${variant}Config") {
         inputs.property("assetBaseUrl", baseUrl)
         inputs.property("bmclBaseUrl", bmclBaseUrl)
+        inputs.property("githubBaseUrl", githubBaseUrl)
         outputs.file(configFile)
         doLast {
             configFile.get().asFile.apply {
                 parentFile.mkdirs()
-                writeText("assetBaseUrl=$baseUrl\nbmclBaseUrl=$bmclBaseUrl\n")
+                writeText("assetBaseUrl=$baseUrl\nbmclBaseUrl=$bmclBaseUrl\ngithubBaseUrl=$githubBaseUrl\n")
             }
         }
     }

@@ -67,7 +67,7 @@ public class ResourcePack {
             throws IOException, NoSuchAlgorithmException {
         String localMd5 = DigestUtil.md5Hex(localFile);
         if (remoteMd5 == null) {
-            try (InputStream input = source.open(md5FileName)) {
+            try (InputStream input = source.openLegacy(md5FileName)) {
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 byte[] buffer = new byte[4096];
                 int count;
@@ -87,7 +87,7 @@ public class ResourcePack {
             throws IOException {
         try {
             Path downloadTmp = tmpFilePath.resolveSibling(tmpFilePath.getFileName().toString() + ".tmp");
-            try (InputStream input = source.open(fileName)) {
+            try (InputStream input = source.openLegacy(fileName)) {
                 Files.copy(input, downloadTmp, StandardCopyOption.REPLACE_EXISTING);
             }
             if (!checkMd5(source, downloadTmp, md5FileName)) {
