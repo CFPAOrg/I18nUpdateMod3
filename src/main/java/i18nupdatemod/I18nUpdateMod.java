@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -53,6 +54,11 @@ public class I18nUpdateMod {
         }
 
         I18nUserConfig.load(minecraftPath);
+        if (I18nUserConfig.onlyWhenChineseSystem() && !isChineseSystem()) {
+            RuntimePackActivation.disable();
+            Log.info("System language is not Chinese; I18nUpdateMod stays idle.");
+            return;
+        }
 
         try {
             Path resourcePackDirectory = minecraftPath.resolve("resourcepacks");
@@ -78,6 +84,10 @@ public class I18nUpdateMod {
         }
     }
 
+
+    private static boolean isChineseSystem() {
+        return "zh".equalsIgnoreCase(Locale.getDefault().getLanguage());
+    }
 
     public static String getLocalStoragePos(Path minecraftPath) {
         Path userHome = Paths.get(System.getProperty("user.home"));
