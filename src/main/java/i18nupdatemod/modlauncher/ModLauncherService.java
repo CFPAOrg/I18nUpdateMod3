@@ -35,6 +35,10 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft path not found");
             return;
         }
+        if (isDedicatedServer(environment)) {
+            Log.info("Dedicated server detected, skipping the client resource-pack update.");
+            return;
+        }
         Log.setMinecraftLogFile(minecraftPath.get());
         String minecraftVersion = getMinecraftVersion();
         if (minecraftVersion == null) {
@@ -63,6 +67,13 @@ public class ModLauncherService implements ITransformationService {
     @Override
     public @NotNull List<ITransformer> transformers() {
         return Collections.singletonList(ModLauncherPackTransformer.create());
+    }
+
+    private static boolean isDedicatedServer(IEnvironment environment) {
+        // Forge and NeoForge name every dedicated-server launch target "*server".
+        return environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get())
+                .map(target -> target.toLowerCase(Locale.ROOT).contains("server"))
+                .orElse(false);
     }
 
     private String getMinecraftVersion() {
