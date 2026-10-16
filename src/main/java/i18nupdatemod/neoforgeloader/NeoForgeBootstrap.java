@@ -30,7 +30,9 @@ public class NeoForgeBootstrap implements GraphicsBootstrapper {
                 return;
             }
             Path gameDir = (Path) loader.get("getGameDir()").get();
-            Log.setMinecraftLogFile(gameDir);
+            if (!I18nUpdateMod.prepare(gameDir)) {
+                return;
+            }
             // FML consumes --fml.mcVersion before calling bootstrappers; do not parse arguments.
             String version = (String) loader.get("getVersionInfo()").get("mcVersion()").get();
             RuntimePackActivation.enable();

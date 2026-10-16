@@ -39,7 +39,9 @@ public class ModLauncherService implements ITransformationService {
             Log.info("Dedicated server detected, skipping the client resource-pack update.");
             return;
         }
-        Log.setMinecraftLogFile(minecraftPath.get());
+        if (!I18nUpdateMod.prepare(minecraftPath.get())) {
+            return;
+        }
         String minecraftVersion = getMinecraftVersion();
         if (minecraftVersion == null) {
             Log.warning("Minecraft version not found");

@@ -1,6 +1,9 @@
 package i18nupdatemod.core;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
 import i18nupdatemod.util.Log;
 
 import java.io.IOException;
@@ -16,9 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User-editable options read once per launch from {@code config/i18nupdatemod.json}; never throws, always falls back to defaults.
- */
+/** User-editable options read once per launch from {@code config/i18nupdatemod.json}; never throws, always falls back to defaults. */
 public class I18nUserConfig {
     private static final Gson GSON = new Gson();
     private static final String FILE_NAME = "i18nupdatemod.json";
@@ -36,6 +37,8 @@ public class I18nUserConfig {
     private static volatile long cacheTtlMillis = TimeUnit.HOURS.toMillis(DEFAULT_CACHE_TTL_HOURS);
     private static volatile List<String> excludedMods = Collections.emptyList();
     private static volatile boolean onlyWhenChineseSystem;
+    private static final List<String> pendingDebug = new ArrayList<>();
+    private static final List<String> pendingWarnings = new ArrayList<>();
 
     public static void load(Path gameDirectory) {
         Path file = gameDirectory.resolve("config").resolve(FILE_NAME);
@@ -43,21 +46,34 @@ public class I18nUserConfig {
             writeTemplate(file);
             return;
         }
-        Data data;
-        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            data = GSON.fromJson(reader, Data.class);
-            if (data == null) {
-                throw new IOException("configuration is empty");
-            }
-        } catch (Exception e) {
-            Log.warning("Failed to read %s, keeping defaults: %s", file, e);
+        JsonObject data = read(file);
+        if (data == null) {
             return;
         }
-        cacheTtlMillis = TimeUnit.HOURS.toMillis(validTtlHours(data.cacheTtlHours, file));
-        excludedMods = normalize(data.excludeMods, file);
-        onlyWhenChineseSystem = data.onlyWhenChineseSystem;
-        Log.debug("User config: cacheTtlHours=%s excludeMods=%s onlyWhenChineseSystem=%s",
+        // 逐字段读取：某个字段写错不能让 onlyWhenChineseSystem 跟着回默认，否则门禁会静默失效
+        cacheTtlMillis = TimeUnit.HOURS.toMillis(validTtlHours(longValue(data, "cacheTtlHours", file), file));
+        excludedMods = normalize(stringList(data, "excludeMods", file), file);
+        onlyWhenChineseSystem = booleanValue(data, "onlyWhenChineseSystem", file);
+        debug("User config: cacheTtlHours=%s excludeMods=%s onlyWhenChineseSystem=%s",
                 TimeUnit.MILLISECONDS.toHours(cacheTtlMillis), excludedMods, onlyWhenChineseSystem);
+    }
+
+    /** 读配置早于日志文件打开，攒下的消息由 prepare() 在开完日志后输出。 */
+    public static void flushLogMessages() {
+        List<String> debugs;
+        List<String> warnings;
+        synchronized (pendingDebug) {
+            debugs = new ArrayList<>(pendingDebug);
+            warnings = new ArrayList<>(pendingWarnings);
+            pendingDebug.clear();
+            pendingWarnings.clear();
+        }
+        for (String line : debugs) {
+            Log.debug(line);
+        }
+        for (String line : warnings) {
+            Log.warning(line);
+        }
     }
 
     public static long cacheTtlMillis() {
@@ -87,7 +103,7 @@ public class I18nUserConfig {
         List<String> result = new ArrayList<>(names.size());
         for (String name : names) {
             if (name == null || name.trim().isEmpty()) {
-                Log.warning("Ignoring empty excludeMods entry in %s", file);
+                warning("Ignoring empty excludeMods entry in %s", file);
                 continue;
             }
             result.add(name.trim().toLowerCase(Locale.ROOT));
@@ -107,9 +123,74 @@ public class I18nUserConfig {
         }
     }
 
-    private static class Data {
-        long cacheTtlHours = DEFAULT_CACHE_TTL_HOURS;
-        List<String> excludeMods;
-        boolean onlyWhenChineseSystem;
+    private static JsonObject read(Path file) {
+        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            JsonReader json = new JsonReader(reader);
+            // 宽松模式：容忍手写配置常见的不带引号键名
+            json.setLenient(true);
+            JsonObject data = GSON.fromJson(json, JsonObject.class);
+            if (data == null) {
+                throw new IOException("configuration is empty");
+            }
+            return data;
+        } catch (Exception e) {
+            warning("Failed to read %s, keeping defaults: %s", file, e);
+            return null;
+        }
+    }
+
+    private static long longValue(JsonObject data, String key, Path file) {
+        JsonElement value = data.get(key);
+        if (value == null || value.isJsonNull()) {
+            return DEFAULT_CACHE_TTL_HOURS;
+        }
+        try {
+            return value.getAsLong();
+        } catch (RuntimeException e) {
+            warning("%s in %s must be a whole number, using %s", key, file, DEFAULT_CACHE_TTL_HOURS);
+            return DEFAULT_CACHE_TTL_HOURS;
+        }
+    }
+
+    private static List<String> stringList(JsonObject data, String key, Path file) {
+        JsonElement value = data.get(key);
+        if (value == null || value.isJsonNull()) {
+            return Collections.emptyList();
+        }
+        try {
+            List<String> names = new ArrayList<>();
+            for (JsonElement name : value.getAsJsonArray()) {
+                names.add(name == null || name.isJsonNull() ? null : name.getAsString());
+            }
+            return names;
+        } catch (RuntimeException e) {
+            warning("%s in %s must be an array of strings, ignoring it", key, file);
+            return Collections.emptyList();
+        }
+    }
+
+    private static boolean booleanValue(JsonObject data, String key, Path file) {
+        JsonElement value = data.get(key);
+        if (value == null || value.isJsonNull()) {
+            return false;
+        }
+        try {
+            return value.getAsBoolean();
+        } catch (RuntimeException e) {
+            warning("%s in %s must be true or false, keeping false", key, file);
+            return false;
+        }
+    }
+
+    private static void debug(String format, Object... args) {
+        synchronized (pendingDebug) {
+            pendingDebug.add(String.format(format, args));
+        }
+    }
+
+    private static void warning(String format, Object... args) {
+        synchronized (pendingDebug) {
+            pendingWarnings.add(String.format(format, args));
+        }
     }
 }

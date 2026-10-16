@@ -15,7 +15,9 @@ public class FabricLoaderMod implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Path gameDir = FabricLoader.getInstance().getGameDir();
-        Log.setMinecraftLogFile(gameDir);
+        if (!I18nUpdateMod.prepare(gameDir)) {
+            return;
+        }
         String mcVersion = getMcVersion();
         if (mcVersion == null) {
             Log.warning("Minecraft version not found");

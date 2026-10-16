@@ -21,7 +21,9 @@ public class LaunchWrapperTweaker implements ITweaker {
             return;
         }
         Path gameDirPath = (gameDir == null ? new File(".") : gameDir).toPath();
-        Log.setMinecraftLogFile(gameDirPath);
+        if (!I18nUpdateMod.prepare(gameDirPath)) {
+            return;
+        }
         String mcVersion = getMcVersion();
         if (mcVersion == null) {
             Log.warning("Failed to get minecraft version.");

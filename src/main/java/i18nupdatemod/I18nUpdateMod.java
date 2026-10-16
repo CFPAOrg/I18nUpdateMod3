@@ -26,6 +26,22 @@ public class I18nUpdateMod {
 
     public static final Gson GSON = new Gson();
 
+    /** Runs before any file-backed logging: loads the user config, applies the system-language gate, opens the log file. Returns false to stay completely idle. */
+    public static boolean prepare(Path minecraftPath) {
+        I18nUserConfig.load(minecraftPath);
+        boolean idle = I18nUserConfig.onlyWhenChineseSystem() && !isChineseSystem();
+        if (!idle) {
+            Log.setMinecraftLogFile(minecraftPath);
+        }
+        I18nUserConfig.flushLogMessages();
+        if (idle) {
+            RuntimePackActivation.disable();
+            Log.info("System language is not Chinese; I18nUpdateMod stays idle.");
+            return false;
+        }
+        return true;
+    }
+
     public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull List<ModTranslation> mods) {
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
             MOD_VERSION = GSON.fromJson(new InputStreamReader(is), JsonObject.class).get("version").getAsString();
@@ -51,13 +67,6 @@ public class I18nUpdateMod {
             Log.warning("为了遵循这一制度，I18nUpdateMod不会下载任何内容。");
             return;
         } catch (ClassNotFoundException ignored) {
-        }
-
-        I18nUserConfig.load(minecraftPath);
-        if (I18nUserConfig.onlyWhenChineseSystem() && !isChineseSystem()) {
-            RuntimePackActivation.disable();
-            Log.info("System language is not Chinese; I18nUpdateMod stays idle.");
-            return;
         }
 
         try {
