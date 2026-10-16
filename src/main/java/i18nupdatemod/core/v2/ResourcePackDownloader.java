@@ -100,7 +100,8 @@ public class ResourcePackDownloader {
     /**
      * 解析Manifest，根据规则排除模组、生成NS
      */
-    public static Map<String, String> selectNamespaces(List<ModTranslation> mods, Manifest manifest) {
+    public static Map<String, String> selectNamespaces(List<ModTranslation> mods, Manifest manifest,
+                                                       List<String> excludedMods) {
         if (mods == null) {
             return new LinkedHashMap<>();
         }
@@ -110,6 +111,8 @@ public class ResourcePackDownloader {
 
         List<String> blackList = manifest.blackList == null
                 ? Collections.emptyList() : manifest.blackList;
+        List<String> excluded = excludedMods == null
+                ? Collections.emptyList() : excludedMods;
         Map<String, String> rules = manifest.rules == null
                 ? Collections.emptyMap() : manifest.rules;
         Map<String, String> selected = new LinkedHashMap<>();
@@ -122,7 +125,7 @@ public class ResourcePackDownloader {
                 Log.warning("Invalid translation namespace: %s", rawNamespace);
                 continue;
             }
-            if (blackList.contains(rawNamespace)) {
+            if (blackList.contains(rawNamespace) || excluded.contains(rawNamespace)) {
                 continue;
             }
 

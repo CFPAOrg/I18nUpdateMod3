@@ -23,8 +23,9 @@ public class ResourcePackV2 {
         ResourcePackHttp source = ResourcePackHttp.configured();
 
         ResourcePackDownloader.Manifest manifest = ResourcePackDownloader.loadManifest(source, plan.targetVersion);
-        manifest.blackList.addAll(I18nUserConfig.excludedMods());
-        Map<String, String> namespaces = ResourcePackDownloader.selectNamespaces(mods, manifest);
+        // 用户排除项只影响本次选包，绝不参与缓存清理
+        Map<String, String> namespaces = ResourcePackDownloader.selectNamespaces(
+                mods, manifest, I18nUserConfig.excludedMods());
         // Capture language eligibility before adding Minecraft's baseline fixes.
         HashSet<String> modDomains = new HashSet<>(namespaces.values());
         namespaces.put("minecraft", "minecraft");

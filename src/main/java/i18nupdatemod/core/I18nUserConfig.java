@@ -28,7 +28,7 @@ public class I18nUserConfig {
     private static final String TEMPLATE = "{\n"
             + "  \"_comment_cacheTtlHours\": \"更新检查间隔（小时）：多久之内不再向服务器校验汉化是否有新版本，0 表示每次启动都校验。默认 24。\",\n"
             + "  \"cacheTtlHours\": 24,\n"
-            + "  \"_comment_excludeMods\": \"不参与汉化的模组命名空间（例如 jei、create）：跳过下载，其已缓存的汉化也会被删除。\",\n"
+            + "  \"_comment_excludeMods\": \"不参与汉化的模组命名空间（例如 jei、create）：跳过下载，也不会进入汉化包；已有缓存不动。\",\n"
             + "  \"excludeMods\": [],\n"
             + "  \"_comment_onlyWhenChineseSystem\": \"为 true 时，只在系统语言（操作系统区域设置，不是游戏内语言）为中文时才启动：非中文系统下模组完全不动作，不联网、不下载、不写任何文件。整合包作者可设为 true 后随包分发。默认 false。\",\n"
             + "  \"onlyWhenChineseSystem\": false\n"
@@ -84,13 +84,17 @@ public class I18nUserConfig {
         return excludedMods;
     }
 
+    public static boolean isExcluded(String namespace) {
+        return namespace != null && excludedMods.contains(namespace.toLowerCase(Locale.ROOT));
+    }
+
     public static boolean onlyWhenChineseSystem() {
         return onlyWhenChineseSystem;
     }
 
     private static long validTtlHours(long hours, Path file) {
         if (hours < 0 || hours > MAX_CACHE_TTL_HOURS) {
-            Log.warning("cacheTtlHours %s out of range in %s, using %s", hours, file, DEFAULT_CACHE_TTL_HOURS);
+            warning("cacheTtlHours %s out of range in %s, using %s", hours, file, DEFAULT_CACHE_TTL_HOURS);
             return DEFAULT_CACHE_TTL_HOURS;
         }
         return hours;
