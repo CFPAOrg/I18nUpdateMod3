@@ -108,10 +108,8 @@ public class GameConfig {
         }
         List<String> selected = GSON.fromJson(
                 new String(bytes, valueStart, valueEnd - valueStart, StandardCharsets.UTF_8), STRING_LIST_TYPE);
-        if (selected == null) {
-            throw new IllegalStateException("resourcePacks must be a JSON array");
-        }
-        return selected;
+        // 空值（如 `resourcePacks:` 后面什么都没有）Gson 返回 null，等同于没有任何资源包
+        return selected == null ? Collections.emptyList() : selected;
     }
 
     private static byte[] replaceResourcePacksLines(byte[] original, byte[] encodedLine) {
