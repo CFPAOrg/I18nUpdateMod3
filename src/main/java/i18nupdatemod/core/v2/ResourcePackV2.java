@@ -1,6 +1,7 @@
 package i18nupdatemod.core.v2;
 
 import i18nupdatemod.core.I18nConfig;
+import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.entity.GameAssetDetail;
@@ -22,7 +23,9 @@ public class ResourcePackV2 {
         ResourcePackHttp source = ResourcePackHttp.configured();
 
         ResourcePackDownloader.Manifest manifest = ResourcePackDownloader.loadManifest(source, plan.targetVersion);
-        Map<String, String> namespaces = ResourcePackDownloader.selectNamespaces(mods, manifest);
+        // 用户排除项只影响本次选包，绝不参与缓存清理
+        Map<String, String> namespaces = ResourcePackDownloader.selectNamespaces(
+                mods, manifest, I18nUserConfig.excludedMods());
         // Capture language eligibility before adding Minecraft's baseline fixes.
         HashSet<String> modDomains = new HashSet<>(namespaces.values());
         namespaces.put("minecraft", "minecraft");

@@ -35,19 +35,28 @@ public class ModLauncherService implements ITransformationService {
             Log.warning("Minecraft path not found");
             return;
         }
-        Log.setMinecraftLogFile(minecraftPath.get());
+        if (isDedicatedServer(environment)) {
+            Log.info("Dedicated server detected, skipping the client resource-pack update.");
+            return;
+        }
+        if (!I18nUpdateMod.prepare(minecraftPath.get())) {
+            return;
+        }
         String minecraftVersion = getMinecraftVersion();
         if (minecraftVersion == null) {
             Log.warning("Minecraft version not found");
             return;
         }
+        boolean neoForge;
         try {
             Class.forName("net.neoforged.fml.loading.FMLLoader", false, getClass().getClassLoader());
+            neoForge = true;
             RuntimePackActivation.enable();
         } catch (ClassNotFoundException ignored) {
-            // Forge keeps the existing file-based activation path.
+            neoForge = false;
         }
-        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, "Forge", ModUtil.getModsFromModsFolder(minecraftPath.get()));
+        I18nUpdateMod.init(minecraftPath.get(), minecraftVersion, neoForge ? "NeoForge" : "Forge",
+                ModUtil.getModsFromModsFolder(minecraftPath.get()));
     }
 
     @Override
@@ -63,6 +72,13 @@ public class ModLauncherService implements ITransformationService {
     @Override
     public @NotNull List<ITransformer> transformers() {
         return Collections.singletonList(ModLauncherPackTransformer.create());
+    }
+
+    private static boolean isDedicatedServer(IEnvironment environment) {
+        // Forge and NeoForge name every dedicated-server launch target "*server".
+        return environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get())
+                .map(target -> target.toLowerCase(Locale.ROOT).contains("server"))
+                .orElse(false);
     }
 
     private String getMinecraftVersion() {
