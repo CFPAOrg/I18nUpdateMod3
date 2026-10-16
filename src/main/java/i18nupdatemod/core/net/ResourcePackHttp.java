@@ -89,19 +89,30 @@ public final class ResourcePackHttp {
         return request(i18nBaseUrl + relativePath, baseRequests);
     }
 
-    /** V1 whole packs: mirrors first, then GitHub's fixed autobuild release. */
+    /** V1 whole packs: every mirror in turn, then GitHub's fixed autobuild release. */
     public InputStream openLegacy(String relativePath) throws IOException {
         Objects.requireNonNull(relativePath, "relativePath");
+        IOException bmclFailure = null;
+        if (bmclBaseUrl != null) {
+            try {
+                return request(bmclBaseUrl + relativePath, bmclRequests);
+            } catch (IOException failure) {
+                bmclFailure = failure;
+            }
+        }
         try {
-            return open(relativePath);
-        } catch (IOException mirrorFailure) {
+            return request(i18nBaseUrl + relativePath, baseRequests);
+        } catch (IOException i18nFailure) {
+            if (bmclFailure != null) {
+                i18nFailure.addSuppressed(bmclFailure);
+            }
             if (githubBaseUrl == null) {
-                throw mirrorFailure;
+                throw i18nFailure;
             }
             try {
                 return request(githubBaseUrl + relativePath, baseRequests);
             } catch (IOException githubFailure) {
-                githubFailure.addSuppressed(mirrorFailure);
+                githubFailure.addSuppressed(i18nFailure);
                 throw githubFailure;
             }
         }
