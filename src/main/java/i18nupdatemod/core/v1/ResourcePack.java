@@ -1,5 +1,6 @@
 package i18nupdatemod.core.v1;
 
+import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.util.DigestUtil;
 import i18nupdatemod.util.Log;
@@ -16,10 +17,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 public class ResourcePack {
-    /**
-     * Limit update check frequency
-     */
-    private static final long UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(1);
     private final Path filePath;
     private final Path tmpFilePath;
     private String remoteMd5;
@@ -55,7 +52,7 @@ public class ResourcePack {
         }
         //Last update time not exceed gap -> Not Update
         if (Files.getLastModifiedTime(tmpFilePath).to(TimeUnit.MILLISECONDS)
-                > System.currentTimeMillis() - UPDATE_TIME_GAP) {
+                > System.currentTimeMillis() - I18nUserConfig.cacheTtlMillis()) {
             Log.debug("Local file %s has been updated recently.", tmpFilePath);
             return true;
         }
