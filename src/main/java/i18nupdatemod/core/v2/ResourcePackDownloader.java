@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.entity.ModTranslation;
 import i18nupdatemod.util.DigestUtil;
@@ -397,12 +396,6 @@ public class ResourcePackDownloader {
         // .zip.md5 would collide with the source digest of a namespace ending in ".zip".
         Path zipMd5File = cached.resolveSibling(cached.getFileName() + "md5");
         discardUnverifiedCache(cached, md5File, zipMd5File);
-        if (Files.isRegularFile(cached) && Files.isRegularFile(md5File)
-                && Files.getLastModifiedTime(cached).toMillis()
-                > System.currentTimeMillis() - I18nUserConfig.cacheTtlMillis()) {
-            return;
-        }
-
         String remoteMd5 = readRemoteText(source, assetPath + ".md5").trim();
         if (!remoteMd5.matches("[0-9a-fA-F]{32}")) {
             throw new AssetFailure("Invalid asset MD5: " + assetPath);

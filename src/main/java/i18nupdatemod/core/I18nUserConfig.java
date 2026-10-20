@@ -26,7 +26,7 @@ public class I18nUserConfig {
     private static final long DEFAULT_CACHE_TTL_HOURS = 24;
     private static final long MAX_CACHE_TTL_HOURS = TimeUnit.DAYS.toHours(365);
     private static final String TEMPLATE = "{\n"
-            + "  \"_comment_cacheTtlHours\": \"更新检查间隔（小时）：多久之内不再向服务器校验汉化是否有新版本，0 表示每次启动都校验。默认 24。\",\n"
+            + "  \"_comment_cacheTtlHours\": \"更新检查间隔（小时）：上次联网检查后多久之内不再联网，0 表示每次启动都检查。本地模组或 excludeMods 有变化会立即重新检查。默认 24。\",\n"
             + "  \"cacheTtlHours\": 24,\n"
             + "  \"_comment_excludeMods\": \"不参与汉化的模组命名空间（例如 jei、create）：跳过下载，也不会进入汉化包；已有缓存不动。\",\n"
             + "  \"excludeMods\": [],\n"

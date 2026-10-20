@@ -1,6 +1,5 @@
 package i18nupdatemod.core.v1;
 
-import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.net.ResourcePackHttp;
 import i18nupdatemod.util.DigestUtil;
 import i18nupdatemod.util.Log;
@@ -14,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.TimeUnit;
 
 public class ResourcePack {
     private final Path filePath;
@@ -49,12 +47,6 @@ public class ResourcePack {
         if (!Files.exists(tmpFilePath)) {
             Log.debug("Local file %s not exist.", tmpFilePath);
             return false;
-        }
-        //Last update time not exceed gap -> Not Update
-        if (Files.getLastModifiedTime(tmpFilePath).to(TimeUnit.MILLISECONDS)
-                > System.currentTimeMillis() - I18nUserConfig.cacheTtlMillis()) {
-            Log.debug("Local file %s has been updated recently.", tmpFilePath);
-            return true;
         }
         //Check Update
         return checkMd5(source, tmpFilePath, md5FileName);

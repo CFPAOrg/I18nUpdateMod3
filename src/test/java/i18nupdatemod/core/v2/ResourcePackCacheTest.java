@@ -47,7 +47,8 @@ class ResourcePackCacheTest {
             assertEquals(2, server.archives.get());
             assertEquals(2, server.checksums.get());
             fetch(server);
-            assertEquals(2, server.checksums.get(), "Verified fresh cache retains its network TTL");
+            assertEquals(3, server.checksums.get(), "Each run re-validates the cached ZIP against the remote digest");
+            assertEquals(2, server.archives.get());
         }
     }
 
@@ -77,7 +78,8 @@ class ResourcePackCacheTest {
             assertTranslation(zip);
             assertEquals(2, server.archives.get());
             fetch(server);
-            assertEquals(2, server.checksums.get(), "Only the first migration requires redownloading");
+            assertEquals(3, server.checksums.get(), "Every run re-validates; only a missing digest forces a redownload");
+            assertEquals(2, server.archives.get());
         }
     }
 
@@ -135,7 +137,7 @@ class ResourcePackCacheTest {
             fetch(server);
             ResourcePackDownloader.download("test", Collections.singletonMap("fixture.zip", "second"),
                     Collections.emptyList(), cache, server.source);
-            assertEquals(2, server.checksums.get(), "Both distinct namespaces must retain valid fresh caches");
+            assertEquals(4, server.checksums.get(), "Each run re-validates both namespaces against their remote digests");
             assertEquals(2, server.archives.get());
         }
     }
