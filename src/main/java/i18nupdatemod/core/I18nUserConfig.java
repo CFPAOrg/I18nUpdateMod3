@@ -119,7 +119,7 @@ public class I18nUserConfig {
         try {
             Files.createDirectories(file.getParent());
             Files.write(file, TEMPLATE.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
-            Log.info("Created default configuration: %s", file);
+            debug("Created default configuration: %s", file);
         } catch (FileAlreadyExistsException e) {
             Log.debug("Configuration already created by another thread: %s", file);
         } catch (IOException e) {
