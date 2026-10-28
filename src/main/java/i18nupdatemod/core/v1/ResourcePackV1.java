@@ -1,6 +1,7 @@
 package i18nupdatemod.core.v1;
 
 import i18nupdatemod.core.I18nConfig;
+import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.ResourcePackConverter;
 import i18nupdatemod.entity.GameAssetDetail;
 import i18nupdatemod.entity.ModTranslation;
@@ -15,7 +16,9 @@ public class ResourcePackV1 {
         GameAssetDetail plan = I18nConfig.getAssetDetail(minecraftVersion);
         HashSet<String> modDomains = new HashSet<>();
         for (ModTranslation mod : mods) {
-            modDomains.add(mod.namespace);
+            if (!I18nUserConfig.isExcluded(mod.namespace)) {
+                modDomains.add(mod.namespace);
+            }
         }
         List<Path> sources = LegacyResourcePackDownloader.download(
                 plan.packMetaData, loader, resourcePackDirectory, cacheRoot);

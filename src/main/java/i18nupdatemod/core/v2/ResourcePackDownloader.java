@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ResourcePackDownloader {
     private static final Gson GSON = new Gson();
-    private static final long UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(1);
     private static final long ICON_UPDATE_TIME_GAP = TimeUnit.DAYS.toMillis(30);
 
     public static Manifest loadManifest(ResourcePackHttp source, String version) throws IOException {
@@ -100,7 +99,8 @@ public class ResourcePackDownloader {
     /**
      * 解析Manifest，根据规则排除模组、生成NS
      */
-    public static Map<String, String> selectNamespaces(List<ModTranslation> mods, Manifest manifest) {
+    public static Map<String, String> selectNamespaces(List<ModTranslation> mods, Manifest manifest,
+                                                       List<String> excludedMods) {
         if (mods == null) {
             return new LinkedHashMap<>();
         }
@@ -110,6 +110,8 @@ public class ResourcePackDownloader {
 
         List<String> blackList = manifest.blackList == null
                 ? Collections.emptyList() : manifest.blackList;
+        List<String> excluded = excludedMods == null
+                ? Collections.emptyList() : excludedMods;
         Map<String, String> rules = manifest.rules == null
                 ? Collections.emptyMap() : manifest.rules;
         Map<String, String> selected = new LinkedHashMap<>();
@@ -122,7 +124,7 @@ public class ResourcePackDownloader {
                 Log.warning("Invalid translation namespace: %s", rawNamespace);
                 continue;
             }
-            if (blackList.contains(rawNamespace)) {
+            if (blackList.contains(rawNamespace) || excluded.contains(rawNamespace)) {
                 continue;
             }
 
@@ -394,12 +396,6 @@ public class ResourcePackDownloader {
         // .zip.md5 would collide with the source digest of a namespace ending in ".zip".
         Path zipMd5File = cached.resolveSibling(cached.getFileName() + "md5");
         discardUnverifiedCache(cached, md5File, zipMd5File);
-        if (Files.isRegularFile(cached) && Files.isRegularFile(md5File)
-                && Files.getLastModifiedTime(cached).toMillis()
-                > System.currentTimeMillis() - UPDATE_TIME_GAP) {
-            return;
-        }
-
         String remoteMd5 = readRemoteText(source, assetPath + ".md5").trim();
         if (!remoteMd5.matches("[0-9a-fA-F]{32}")) {
             throw new AssetFailure("Invalid asset MD5: " + assetPath);

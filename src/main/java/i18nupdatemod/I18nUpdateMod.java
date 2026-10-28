@@ -3,6 +3,7 @@ package i18nupdatemod;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import i18nupdatemod.core.GameConfig;
+import i18nupdatemod.core.I18nUserConfig;
 import i18nupdatemod.core.ResourcePackUpdater;
 import i18nupdatemod.core.RuntimePackActivation;
 import i18nupdatemod.entity.ModTranslation;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -23,6 +25,22 @@ public class I18nUpdateMod {
     public static String MOD_VERSION;
 
     public static final Gson GSON = new Gson();
+
+    /** Runs before any file-backed logging: loads the user config, applies the system-language gate, opens the log file. Returns false to stay completely idle. */
+    public static boolean prepare(Path minecraftPath) {
+        I18nUserConfig.load(minecraftPath);
+        boolean idle = I18nUserConfig.onlyWhenChineseSystem() && !isChineseSystem();
+        if (!idle) {
+            Log.setMinecraftLogFile(minecraftPath);
+        }
+        I18nUserConfig.flushLogMessages();
+        if (idle) {
+            RuntimePackActivation.disable();
+            Log.info("System language is not Chinese; I18nUpdateMod stays idle.");
+            return false;
+        }
+        return true;
+    }
 
     public static void init(Path minecraftPath, String minecraftVersion, String loader, @NotNull List<ModTranslation> mods) {
         try (InputStream is = I18nUpdateMod.class.getResourceAsStream("/i18nMetaData.json")) {
@@ -66,17 +84,19 @@ public class I18nUpdateMod {
             }
 
             //Apply resource pack
-            GameConfig config = new GameConfig(minecraftPath.resolve("options.txt"));
-            config.addResourcePack("Minecraft-Mod-Language-Modpack",
+            GameConfig.addResourcePack(minecraftPath.resolve("options.txt"), "Minecraft-Mod-Language-Modpack",
                     (Version.from(minecraftVersion).compareTo(Version.from("1.13")) < 0 ? "" : "file/")
                             + convertedPack.getFileName().toString());
-            config.writeToFile();
         } catch (Exception e) {
             Log.warning(String.format("Failed to update resource pack: %s", e));
 //            e.printStackTrace();
         }
     }
 
+
+    private static boolean isChineseSystem() {
+        return "zh".equalsIgnoreCase(Locale.getDefault().getLanguage());
+    }
 
     public static String getLocalStoragePos(Path minecraftPath) {
         Path userHome = Paths.get(System.getProperty("user.home"));

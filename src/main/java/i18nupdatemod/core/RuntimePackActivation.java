@@ -51,6 +51,13 @@ public final class RuntimePackActivation {
         return enabled;
     }
 
+    /** Keeps a gated-off launch from hooking the client or writing a pack selection. */
+    public static void disable() {
+        synchronized (STATE_LOCK) {
+            enabled = false;
+        }
+    }
+
     /**
      * Records an explicit Options binding failure, not a generic no-change transform result.
      * A prepared pack is persisted now; a later prepare call uses the same file fallback.

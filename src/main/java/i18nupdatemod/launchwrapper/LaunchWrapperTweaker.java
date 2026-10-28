@@ -8,6 +8,7 @@ import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 //1.6-1.12.2
@@ -15,13 +16,20 @@ public class LaunchWrapperTweaker implements ITweaker {
 
     @Override
     public void acceptOptions(List<String> args, File gameDir, File assetsDir, String profile) {
-        Log.setMinecraftLogFile(gameDir.toPath());
+        if (isDedicatedServer()) {
+            Log.info("Dedicated server detected, skipping the client resource-pack update.");
+            return;
+        }
+        Path gameDirPath = (gameDir == null ? new File(".") : gameDir).toPath();
+        if (!I18nUpdateMod.prepare(gameDirPath)) {
+            return;
+        }
         String mcVersion = getMcVersion();
         if (mcVersion == null) {
             Log.warning("Failed to get minecraft version.");
             return;
         }
-        I18nUpdateMod.init(gameDir.toPath(), mcVersion, "Forge", ModUtil.getModsFromModsFolder(gameDir.toPath()));
+        I18nUpdateMod.init(gameDirPath, mcVersion, "Forge", ModUtil.getModsFromModsFolder(gameDirPath));
     }
 
     @Override
@@ -37,6 +45,24 @@ public class LaunchWrapperTweaker implements ITweaker {
     @Override
     public String[] getLaunchArguments() {
         return new String[0];
+    }
+
+    private boolean isDedicatedServer() {
+        // 1.6~1.7.10
+        if (isServerSide("cpw.mods.fml.relauncher.FMLLaunchHandler")) {
+            return true;
+        }
+        // 1.8~1.12.2
+        return isServerSide("net.minecraftforge.fml.relauncher.FMLLaunchHandler");
+    }
+
+    private boolean isServerSide(String launchHandler) {
+        try {
+            return "SERVER".equalsIgnoreCase(
+                    String.valueOf(Reflection.clazz(launchHandler).get("side()").get()));
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private String getMcVersion() {
