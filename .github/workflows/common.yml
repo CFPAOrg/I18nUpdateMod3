@@ -50,7 +50,9 @@ jobs:
           CHANGE_LOG: ${{ inputs.change-log }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
-          ./gradlew modrinth modrinthSyncBody --info --stacktrace
+          # the same jar is published twice, each run names its loader family explicitly
+          ./gradlew modrinth modrinthSyncBody -PmodrinthTarget=fabric --info --stacktrace
+          ./gradlew modrinth -PmodrinthTarget=forge --info --stacktrace
       -
         name: Publish CurseForge
         if: ${{ !inputs.is-snapshot && inputs.build-task == 'buildRelease' }}

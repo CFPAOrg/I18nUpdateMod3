@@ -143,18 +143,45 @@ tasks.processResources {
 }
 
 val supportMinecraftVersions = project.properties["minecraft"].toString().split(",")
+// Modrinth validates a version's `loaders` against its `game_versions` as a cartesian product and
+// refuses the `fabric` loader on any game version older than 18w43b (1.13.2 and below), so this
+// single jar is published as two version entries, one per loader family.
+//
+// Both runs have to name their target explicitly, there is no default:
+//   -PmodrinthTarget=fabric -> loaders [fabric, quilt],   game versions 1.14  and later
+//   -PmodrinthTarget=forge  -> loaders [forge, neoforge], game versions 1.6.1 and later
+val modrinthTargets = linkedMapOf(
+    "fabric" to (listOf("fabric", "quilt") to "1.14"),
+    "forge" to (listOf("forge", "neoforge") to "1.6.1"),
+)
+val modrinthTarget = project.findProperty("modrinthTarget")?.toString()
+val modrinthTargetSpec = modrinthTarget?.let { modrinthTargets[it] }
+val modrinthTargetLoaders = modrinthTargetSpec?.first
 
 modrinth {
     token.set(System.getenv("MODRINTH_TOKEN"))
     projectId.set("PWERr14M")
-    versionNumber.set("${project.version}")
-    versionName.set("I18nUpdateMod ${project.version}")
+    versionNumber.set("${project.version}" + (modrinthTarget?.let { "+$it" } ?: ""))
+    versionName.set("I18nUpdateMod ${project.version}" + (modrinthTargetLoaders?.let { " (${it.joinToString("/")})" } ?: ""))
     versionType.set("release")
     uploadFile.set(tasks["shadowJar"])
-    gameVersions.set(supportMinecraftVersions)
-    loaders.set(listOf("fabric", "forge", "neoforge", "quilt"))
+    gameVersions.set(
+        modrinthTargetSpec?.let { spec ->
+            supportMinecraftVersions.dropWhile { version -> version != spec.second }
+        } ?: supportMinecraftVersions,
+    )
+    loaders.set(modrinthTargetLoaders ?: emptyList())
     syncBodyFrom.set(rootProject.file("README.md").readText())
     changelog.set(System.getenv("CHANGE_LOG"))
+}
+
+tasks.named("modrinth") {
+    doFirst {
+        checkNotNull(modrinthTargetLoaders) {
+            "Publishing to Modrinth needs an explicit -PmodrinthTarget, one of: " +
+                modrinthTargets.keys.joinToString(", ") + " (passed: $modrinthTarget)"
+        }
+    }
 }
 
 val curseForgeSpecialVersions = project.properties["curseforge"].toString().split(",")
